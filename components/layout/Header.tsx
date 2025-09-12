@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -16,9 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
 export function Header() {
-  const { user, userProfile, logout } = useAuth();
+  const { data: session } = useSession();
 
-  if (!user || !userProfile) return null;
+  if (!session) return null;
 
   return (
     <header className="bg-background border-b px-6 py-4">
@@ -39,9 +39,9 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.photoURL || ''} alt={userProfile.ownerName} />
+                <AvatarImage src={session.user.image || ''} alt={session.user.name || ''} />
                 <AvatarFallback>
-                  {userProfile.ownerName.charAt(0).toUpperCase()}
+                  {session.user.name?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -49,9 +49,9 @@ export function Header() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{userProfile.ownerName}</p>
+                <p className="text-sm font-medium leading-none">{session.user.name}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {userProfile.businessName || 'No business name'}
+                  {session.user.email}
                 </p>
               </div>
             </DropdownMenuLabel>
@@ -65,7 +65,7 @@ export function Header() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={() => signOut()}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
@@ -75,3 +75,4 @@ export function Header() {
     </header>
   );
 }
+

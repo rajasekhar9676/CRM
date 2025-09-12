@@ -112,3 +112,4 @@ If you encounter issues:
 2. Check the browser console for client-side errors
 3. Verify your environment variables are correct
 4. Make sure all Firebase services are enabled
+

@@ -51,3 +51,4 @@ export interface UserProfile {
   email: string;
   photoURL?: string;
 }
+

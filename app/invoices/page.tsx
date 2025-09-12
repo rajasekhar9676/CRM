@@ -1,76 +1,60 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Search, 
-  DollarSign,
-  FileText,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  Download,
-  Send
-} from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Invoice } from '@/types';
-import Link from 'next/link';
-import { format } from 'date-fns';
+import { Plus, FileText, Edit, Trash2, Eye, MessageCircle, Download } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { InvoiceViewModal } from '@/components/invoices/InvoiceViewModal';
 
-const statusColors = {
-  'Unpaid': 'bg-red-100 text-red-800',
-  'Paid': 'bg-green-100 text-green-800',
-};
+interface Invoice {
+  id: string;
+  customer_id: string;
+  order_id?: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}
 
 export default function InvoicesPage() {
-  const { user } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (status === 'unauthenticated') {
       router.push('/');
       return;
     }
+  }, [status, router]);
 
-    fetchInvoices();
-  }, [user, router]);
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchInvoices();
+    }
+  }, [status]);
 
   const fetchInvoices = async () => {
-    if (!user) return;
-
     try {
-      const invoicesQuery = query(
-        collection(db, 'invoices'),
-        where('ownerId', '==', user.uid)
-      );
-      const snapshot = await getDocs(invoicesQuery);
-      const invoicesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
-      })) as Invoice[];
-      
-      setInvoices(invoicesData);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('user_id', (session?.user as any)?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invoices:', error);
+        return;
+      }
+
+      setInvoices(data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
     } finally {
@@ -78,193 +62,335 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDeleteInvoice = async (invoiceId: string) => {
-    if (!user) return;
-    
+  const handleDelete = async (invoiceId: string) => {
+    if (!confirm('Are you sure you want to delete this invoice?')) return;
+
     try {
-      await deleteDoc(doc(db, 'invoices', invoiceId));
-      setInvoices(invoices.filter(i => i.id !== invoiceId));
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+      if (error) {
+        console.error('Error deleting invoice:', error);
+        alert('Error deleting invoice. Please try again.');
+        return;
+      }
+
+      // Refresh invoices list
+      fetchInvoices();
     } catch (error) {
       console.error('Error deleting invoice:', error);
+      alert('Error deleting invoice. Please try again.');
     }
   };
 
-  const handleDownloadPDF = (invoice: Invoice) => {
-    if (invoice.pdfUrl) {
-      window.open(invoice.pdfUrl, '_blank');
-    } else {
-      // Generate PDF on the fly
-      generatePDF(invoice);
-    }
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedInvoice(null);
+  };
+
+  const generateWhatsAppLink = (invoice: Invoice) => {
+    const message = `Hello! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. Please review and let me know if you have any questions.`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const generatePDF = async (invoice: Invoice) => {
-    // This would integrate with jsPDF or similar library
-    // For now, we'll just show a placeholder
-    console.log('Generating PDF for invoice:', invoice.id);
+    try {
+      // Fetch customer and business details for PDF
+      const [customerResult, businessResult] = await Promise.all([
+        supabase
+          .from('customers')
+          .select('*')
+          .eq('id', invoice.customer_id)
+          .single(),
+        supabase
+          .from('users')
+          .select('business_name, business_address, business_city, business_state, business_zip, business_phone, business_email, business_website, business_tax_id')
+          .eq('id', (session?.user as any)?.id)
+          .single()
+      ]);
+
+      if (customerResult.error) {
+        console.error('Error fetching customer:', customerResult.error);
+        alert('Error generating PDF. Please try again.');
+        return;
+      }
+
+      if (businessResult.error) {
+        console.error('Error fetching business profile:', businessResult.error);
+        alert('Error generating PDF. Please try again.');
+        return;
+      }
+
+      const customer = customerResult.data;
+      const business = businessResult.data;
+      const doc = new (await import('jspdf')).jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPosition = 20;
+
+      // Header
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INVOICE', pageWidth - margin - 50, yPosition);
+      
+      yPosition += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Invoice #${invoice.id.slice(-8)}`, pageWidth - margin - 50, yPosition);
+      
+      yPosition += 5;
+      doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, pageWidth - margin - 50, yPosition);
+
+      yPosition += 20;
+
+      // Company Info (from business profile)
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(business.business_name || 'Your Business Name', margin, yPosition);
+      
+      yPosition += 5;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      if (business.business_address) {
+        doc.text(business.business_address, margin, yPosition);
+        yPosition += 4;
+      }
+      
+      const cityStateZip = [business.business_city, business.business_state, business.business_zip]
+        .filter(Boolean)
+        .join(', ');
+      if (cityStateZip) {
+        doc.text(cityStateZip, margin, yPosition);
+        yPosition += 4;
+      }
+      
+      if (business.business_phone) {
+        doc.text(`Phone: ${business.business_phone}`, margin, yPosition);
+        yPosition += 4;
+      }
+      
+      if (business.business_email) {
+        doc.text(`Email: ${business.business_email}`, margin, yPosition);
+        yPosition += 4;
+      }
+      
+      if (business.business_website) {
+        doc.text(`Website: ${business.business_website}`, margin, yPosition);
+        yPosition += 4;
+      }
+
+      yPosition += 20;
+
+      // Bill To
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Bill To:', margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(customer.name, margin, yPosition);
+      yPosition += 4;
+      doc.text(customer.email, margin, yPosition);
+      if (customer.phone) {
+        yPosition += 4;
+        doc.text(customer.phone, margin, yPosition);
+      }
+
+      yPosition += 20;
+
+      // Invoice Details Table
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Description', margin, yPosition);
+      doc.text('Amount', pageWidth - margin - 30, yPosition);
+      
+      yPosition += 8;
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 5;
+
+      // Invoice item
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Invoice Amount', margin, yPosition);
+      doc.text(`$${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
+      
+      yPosition += 10;
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 5;
+
+      // Total
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total:', pageWidth - margin - 50, yPosition);
+      doc.text(`$${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
+
+      yPosition += 20;
+
+      // Status
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Status: ${invoice.status}`, margin, yPosition);
+
+      // Tax ID if available
+      if (business.business_tax_id) {
+        yPosition += 10;
+        doc.text(`Tax ID: ${business.business_tax_id}`, margin, yPosition);
+      }
+
+      // Footer
+      yPosition = doc.internal.pageSize.getHeight() - 30;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Thank you for your business!', margin, yPosition);
+
+      // Save the PDF
+      doc.save(`invoice-${invoice.id.slice(-8)}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
   };
 
-  const handleSendWhatsApp = (invoice: Invoice) => {
-    // This would open WhatsApp with a pre-filled message
-    const message = `Hello! Here's your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)}.`;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Unpaid':
+        return 'bg-red-100 text-red-800';
+      case 'Paid':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  if (!user) {
+  if (!session) {
     return null;
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
             <p className="text-muted-foreground">
               Generate and manage your invoices
             </p>
           </div>
-          <Button asChild>
-            <Link href="/invoices/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Invoice
-            </Link>
+          <Button onClick={() => router.push('/invoices/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Generate Invoice
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search invoices..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-          >
-            <option value="all">All Status</option>
-            <option value="Unpaid">Unpaid</option>
-            <option value="Paid">Paid</option>
-          </select>
-        </div>
-
-        {/* Invoices List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredInvoices.length === 0 ? (
+        {invoices.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No invoices found</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'No invoices match your filters.' 
-                  : 'Get started by creating your first invoice.'
-                }
-              </p>
-              {!searchTerm && statusFilter === 'all' && (
-                <Button asChild>
-                  <Link href="/invoices/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Invoice
-                  </Link>
-                </Button>
-              )}
+            <CardContent>
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No invoices yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start by generating your first invoice to get started.
+                  </p>
+                  <Button onClick={() => router.push('/invoices/new')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Generate Your First Invoice
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            {filteredInvoices.map((invoice) => (
-              <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <CardTitle className="text-lg">Invoice #{invoice.id.slice(-8)}</CardTitle>
-                        <Badge className={statusColors[invoice.status]}>
-                          {invoice.status}
-                        </Badge>
-                      </div>
+            {invoices.map((invoice) => (
+              <Card key={invoice.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Invoice #{invoice.id.slice(-8)}</CardTitle>
                       <CardDescription>
-                        Created {format(invoice.createdAt, 'MMM dd, yyyy')}
+                        Created: {new Date(invoice.created_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/invoices/${invoice.id}`}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDownloadPDF(invoice)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleSendWhatsApp(invoice)}
-                        >
-                          <Send className="h-4 w-4 mr-2" />
-                          Send via WhatsApp
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteInvoice(invoice.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(invoice.status)}>
+                        {invoice.status}
+                      </Badge>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold">
+                          ${invoice.amount.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Customer: {invoice.customer_id}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-2xl font-bold">
-                        ${invoice.amount.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
+                <CardContent>
+                  <div className="space-y-3">
+                    {invoice.order_id && (
+                      <div>
+                        <h4 className="font-medium mb-1">Related Order:</h4>
+                        <p className="text-sm text-muted-foreground">{invoice.order_id}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end space-x-2 pt-2 border-t">
+                      <Button 
+                        variant="outline" 
                         size="sm"
-                        onClick={() => handleDownloadPDF(invoice)}
+                        onClick={() => handleViewInvoice(invoice)}
                       >
-                        <Download className="h-4 w-4 mr-1" />
-                        PDF
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
                       </Button>
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         size="sm"
-                        onClick={() => handleSendWhatsApp(invoice)}
+                        onClick={() => generateWhatsAppLink(invoice)}
                       >
-                        <Send className="h-4 w-4 mr-1" />
-                        Send
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        WhatsApp
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => generatePDF(invoice)}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDelete(invoice.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
                       </Button>
                     </div>
                   </div>
@@ -273,6 +399,13 @@ export default function InvoicesPage() {
             ))}
           </div>
         )}
+
+        {/* Invoice View Modal */}
+        <InvoiceViewModal
+          invoice={selectedInvoice}
+          isOpen={isViewModalOpen}
+          onClose={handleCloseModal}
+        />
       </div>
     </DashboardLayout>
   );

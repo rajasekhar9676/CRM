@@ -1,10 +1,11 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AuthModal from '@/components/auth/AuthModal';
 import { 
   Loader2, 
   Users, 
@@ -23,35 +24,51 @@ import {
 import Link from 'next/link';
 
 export default function HomePage() {
-  const { user, loading, signInWithGoogle, enableDemoMode } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    if (user && !loading) {
+    if (session && status === 'authenticated') {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [session, status, router]);
 
   const handleGetStarted = () => {
-    if (user) {
+    if (session) {
       router.push('/dashboard');
     } else {
-      signInWithGoogle();
+      setAuthMode('register');
+      setIsAuthModalOpen(true);
     }
+  };
+
+  const handleLogin = () => {
+    setAuthMode('login');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleRegister = () => {
+    setAuthMode('register');
+    setIsAuthModalOpen(true);
   };
 
   const handleDemoMode = () => {
     setIsDemoLoading(true);
-    enableDemoMode();
+    // For demo mode, we'll just redirect to dashboard
+    setTimeout(() => {
+      router.push('/dashboard');
+    }, 1000);
   };
 
   const scrollToFeatures = () => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -59,7 +76,7 @@ export default function HomePage() {
     );
   }
 
-  if (user) {
+  if (session) {
     return null; // Will redirect to dashboard
   }
 
@@ -81,14 +98,32 @@ export default function HomePage() {
               <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
             </div>
 
-            {/* Auth Button */}
+            {/* Auth Buttons */}
             <div className="flex items-center space-x-4">
-              <Button 
-                onClick={handleGetStarted}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {user ? 'Go to Dashboard' : 'Login / Register'}
-              </Button>
+              {session ? (
+                <Button 
+                  onClick={() => router.push('/dashboard')}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    onClick={handleLogin}
+                    variant="outline"
+                    className="border-green-500 text-green-500 hover:bg-green-50"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    onClick={handleRegister}
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    Register
+                  </Button>
+                </>
+              )}
               
               {/* Mobile menu button */}
               <button
@@ -119,7 +154,7 @@ export default function HomePage() {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
               Manage Customers, Orders & Invoices
-              <span className="block text-blue-600">— All in One Place</span>
+              <span className="block text-green-500">— All in One Place</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Send invoices on WhatsApp, track payments, and grow your business with our simple yet powerful CRM.
@@ -128,7 +163,7 @@ export default function HomePage() {
               <Button 
                 onClick={handleGetStarted}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
               >
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -157,8 +192,8 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-6 w-6 text-green-500" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Customer Manager</h3>
                 <p className="text-gray-600">Save customer contacts in one place with tags and notes.</p>
@@ -167,8 +202,8 @@ export default function HomePage() {
 
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <ShoppingCart className="h-6 w-6 text-green-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <ShoppingCart className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Order Tracking</h3>
                 <p className="text-gray-600">Track orders from New to Completed with status updates.</p>
@@ -208,7 +243,7 @@ export default function HomePage() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Add Customer</h3>
@@ -216,7 +251,7 @@ export default function HomePage() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Create Order</h3>
@@ -224,7 +259,7 @@ export default function HomePage() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Send Invoice on WhatsApp</h3>
@@ -235,19 +270,19 @@ export default function HomePage() {
       </section>
 
       {/* Call-to-Action Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-green-500">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Start Managing Your Business in 5 Minutes
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-green-100 mb-8">
             Join thousands of businesses already using MiniCRM to streamline their operations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-lg"
+              className="bg-white text-green-500 hover:bg-gray-100 px-8 py-3 text-lg"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -273,7 +308,7 @@ export default function HomePage() {
               onClick={handleDemoMode}
               variant="outline"
               size="lg"
-              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-lg"
+              className="border-white text-white hover:bg-white hover:text-green-500 px-8 py-3 text-lg"
             >
               {isDemoLoading ? (
                 <>
@@ -326,6 +361,13 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode={authMode}
+      />
     </div>
   );
 }

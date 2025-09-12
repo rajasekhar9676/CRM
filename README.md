@@ -226,3 +226,4 @@ For support, please open an issue in the GitHub repository.
 ---
 
 Built with ❤️ using Next.js, Firebase, and modern web technologies.
+

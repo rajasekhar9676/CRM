@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Loader2 } from 'lucide-react';
@@ -10,9 +10,9 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { loading } = useAuth();
+  const { status } = useSession();
 
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

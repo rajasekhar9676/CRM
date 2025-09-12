@@ -1,158 +1,164 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 export default function NewCustomerPage() {
-  const { user } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
     email: '',
+    phone: '',
     instaHandle: '',
     notes: '',
     tags: '',
   });
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/');
+      return;
+    }
+  }, [status, router]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    setIsLoading(true);
 
-    setLoading(true);
     try {
-      const tagsArray = formData.tags
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('customers')
+        .insert({
+          user_id: (session?.user as any)?.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          insta_handle: formData.instaHandle,
+          notes: formData.notes,
+          tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
+        })
+        .select()
+        .single();
 
-      await addDoc(collection(db, 'customers'), {
-        ownerId: user.uid,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        instaHandle: formData.instaHandle,
-        notes: formData.notes,
-        tags: tagsArray,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      if (error) {
+        console.error('Error saving customer:', error);
+        alert('Error saving customer. Please try again.');
+        return;
+      }
 
-      toast({
-        title: 'Customer created',
-        description: 'The customer has been successfully created.',
-      });
-
+      console.log('Customer saved successfully:', data);
+      
+      // Redirect back to customers list
       router.push('/customers');
     } catch (error) {
-      console.error('Error creating customer:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create customer. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error saving customer:', error);
+      alert('Error saving customer. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  if (!user) {
+  if (!session) {
     return null;
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/customers">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">New Customer</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Add New Customer</h1>
             <p className="text-muted-foreground">
-              Add a new customer to your CRM
+              Create a new customer profile
             </p>
           </div>
         </div>
 
-        <Card className="max-w-2xl">
+        <Card>
           <CardHeader>
             <CardTitle>Customer Information</CardTitle>
             <CardDescription>
-              Enter the customer's details below
+              Fill in the details for your new customer
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Customer name"
+                    onChange={handleChange}
                     required
+                    placeholder="John Doe"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="Phone number"
-                  />
-                </div>
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Email address"
+                    onChange={handleChange}
+                    placeholder="john@example.com"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="instaHandle">Instagram Handle</Label>
                   <Input
                     id="instaHandle"
                     name="instaHandle"
                     value={formData.instaHandle}
-                    onChange={handleInputChange}
-                    placeholder="Instagram username (without @)"
+                    onChange={handleChange}
+                    placeholder="@johndoe"
                   />
                 </div>
               </div>
@@ -163,10 +169,10 @@ export default function NewCustomerPage() {
                   id="tags"
                   name="tags"
                   value={formData.tags}
-                  onChange={handleInputChange}
-                  placeholder="Enter tags separated by commas"
+                  onChange={handleChange}
+                  placeholder="VIP, Regular, New (comma separated)"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Separate multiple tags with commas
                 </p>
               </div>
@@ -177,26 +183,30 @@ export default function NewCustomerPage() {
                   id="notes"
                   name="notes"
                   value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Additional notes about the customer"
+                  onChange={handleChange}
+                  placeholder="Any additional notes about this customer..."
                   rows={4}
                 />
               </div>
 
               <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" asChild>
-                  <Link href="/customers">Cancel</Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                >
+                  Cancel
                 </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Creating...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Create Customer
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Customer
                     </>
                   )}
                 </Button>

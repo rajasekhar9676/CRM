@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -13,8 +13,7 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -25,9 +24,9 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user, userProfile } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const isDemoMode = user?.uid === 'demo-user';
+  const isDemoMode = false; // Demo mode disabled for now
   const [stats, setStats] = useState<DashboardStats>({
     totalCustomers: 0,
     pendingOrders: 0,
@@ -38,53 +37,60 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (status === 'unauthenticated') {
       router.push('/');
       return;
     }
 
     const fetchStats = async () => {
-      if (!user) return;
+      if (!(session?.user as any)?.id) return;
 
       try {
         // Fetch customers
-        const customersQuery = query(
-          collection(db, 'customers'),
-          where('ownerId', '==', user.uid)
-        );
-        const customersSnapshot = await getDocs(customersQuery);
-        const totalCustomers = customersSnapshot.size;
+        const { data: customers, error: customersError } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('user_id', (session?.user as any)?.id);
+
+        if (customersError) {
+          console.error('Error fetching customers:', customersError);
+        }
+        const totalCustomers = customers?.length || 0;
 
         // Fetch orders
-        const ordersQuery = query(
-          collection(db, 'orders'),
-          where('ownerId', '==', user.uid)
-        );
-        const ordersSnapshot = await getDocs(ordersQuery);
-        const orders = ordersSnapshot.docs.map(doc => doc.data());
+        const { data: orders, error: ordersError } = await supabase
+          .from('orders')
+          .select('status')
+          .eq('user_id', (session?.user as any)?.id);
+
+        if (ordersError) {
+          console.error('Error fetching orders:', ordersError);
+        }
         
-        const pendingOrders = orders.filter(order => 
+        const pendingOrders = orders?.filter(order => 
           order.status === 'New' || order.status === 'In Progress'
-        ).length;
-        const completedOrders = orders.filter(order => 
+        ).length || 0;
+        const completedOrders = orders?.filter(order => 
           order.status === 'Completed' || order.status === 'Paid'
-        ).length;
+        ).length || 0;
 
         // Fetch invoices
-        const invoicesQuery = query(
-          collection(db, 'invoices'),
-          where('ownerId', '==', user.uid)
-        );
-        const invoicesSnapshot = await getDocs(invoicesQuery);
-        const invoices = invoicesSnapshot.docs.map(doc => doc.data());
+        const { data: invoices, error: invoicesError } = await supabase
+          .from('invoices')
+          .select('status, amount')
+          .eq('user_id', (session?.user as any)?.id);
+
+        if (invoicesError) {
+          console.error('Error fetching invoices:', invoicesError);
+        }
         
-        const unpaidInvoices = invoices.filter(invoice => 
+        const unpaidInvoices = invoices?.filter(invoice => 
           invoice.status === 'Unpaid'
-        ).length;
+        ).length || 0;
         
         const totalRevenue = invoices
-          .filter(invoice => invoice.status === 'Paid')
-          .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+          ?.filter(invoice => invoice.status === 'Paid')
+          .reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
 
         setStats({
           totalCustomers,
@@ -101,9 +107,17 @@ export default function DashboardPage() {
     };
 
     fetchStats();
-  }, [user, router]);
+  }, [session, status, router]);
 
-  if (!user) {
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
     return null;
   }
 
@@ -151,9 +165,9 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Welcome back, {userProfile?.ownerName || 'User'}!
-              </h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back, {session?.user?.name || 'User'}!
+            </h1>
               <p className="text-muted-foreground">
                 Here's what's happening with your business today.
               </p>
