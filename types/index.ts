@@ -1,14 +1,14 @@
 export interface Customer {
   id: string;
-  ownerId: string;
+  user_id: string;
   name: string;
-  phone: string;
-  email: string;
-  instaHandle: string;
-  notes: string;
+  phone?: string;
+  email?: string;
+  insta_handle?: string;
+  notes?: string;
   tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Order {

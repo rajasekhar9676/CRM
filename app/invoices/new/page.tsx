@@ -13,12 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Loader2, Download, MessageCircle } from 'lucide-react';
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-}
+import { Customer } from '@/types';
 
 interface Order {
   id: string;

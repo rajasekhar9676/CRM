@@ -19,12 +19,7 @@ interface OrderItem {
   price: number;
 }
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-}
+import { Customer } from '@/types';
 
 export default function NewOrderPage() {
   const { data: session, status } = useSession();

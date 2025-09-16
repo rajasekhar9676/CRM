@@ -10,17 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerEditModal } from '@/components/customers/CustomerEditModal';
-
-interface Customer {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  insta_handle?: string;
-  notes?: string;
-  tags: string[];
-  created_at: string;
-}
+import { Customer } from '@/types';
 
 export default function CustomersPage() {
   const { data: session, status } = useSession();

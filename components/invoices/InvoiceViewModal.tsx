@@ -19,13 +19,7 @@ interface Invoice {
   created_at: string;
 }
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  instagram_handle?: string;
-}
+import { Customer } from '@/types';
 
 interface Order {
   id: string;

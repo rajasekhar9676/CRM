@@ -9,16 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  insta_handle?: string;
-  notes?: string;
-  tags: string[];
-}
+import { Customer } from '@/types';
 
 interface CustomerEditModalProps {
   customer: Customer | null;

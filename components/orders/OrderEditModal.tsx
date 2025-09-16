@@ -11,11 +11,7 @@ import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-}
+import { Customer } from '@/types';
 
 interface OrderItem {
   name: string;

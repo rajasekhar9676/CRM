@@ -20,7 +20,7 @@ export default function NewCustomerPage() {
     name: '',
     email: '',
     phone: '',
-    instaHandle: '',
+    insta_handle: '',
     notes: '',
     tags: '',
   });
@@ -52,7 +52,7 @@ export default function NewCustomerPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          insta_handle: formData.instaHandle,
+          insta_handle: formData.insta_handle,
           notes: formData.notes,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
         })
@@ -152,11 +152,11 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="instaHandle">Instagram Handle</Label>
+                  <Label htmlFor="insta_handle">Instagram Handle</Label>
                   <Input
-                    id="instaHandle"
-                    name="instaHandle"
-                    value={formData.instaHandle}
+                    id="insta_handle"
+                    name="insta_handle"
+                    value={formData.insta_handle}
                     onChange={handleChange}
                     placeholder="@johndoe"
                   />
