@@ -16,7 +16,9 @@ ADD COLUMN IF NOT EXISTS business_phone VARCHAR(20),
 ADD COLUMN IF NOT EXISTS business_email VARCHAR(255),
 ADD COLUMN IF NOT EXISTS business_website VARCHAR(255),
 ADD COLUMN IF NOT EXISTS business_tax_id VARCHAR(50),
-ADD COLUMN IF NOT EXISTS business_logo_url TEXT;
+ADD COLUMN IF NOT EXISTS business_logo_url TEXT,
+ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
 
 -- Update existing users to have default business name if they have business_name from registration
 UPDATE users 

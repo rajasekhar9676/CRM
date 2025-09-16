@@ -20,6 +20,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     password: '',
     confirmPassword: '',
     businessName: '',
+    businessAddress: '',
     phoneNumber: '',
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -63,6 +64,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           email: formData.email,
           password: formData.password,
           businessName: formData.businessName,
+          businessAddress: formData.businessAddress,
           phoneNumber: formData.phoneNumber,
         }),
       })
@@ -142,13 +144,27 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Label htmlFor="businessAddress">Business Address *</Label>
+            <Input
+              id="businessAddress"
+              name="businessAddress"
+              type="text"
+              value={formData.businessAddress}
+              onChange={handleChange}
+              required
+              placeholder="123 Main Street, City, State"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number *</Label>
             <Input
               id="phoneNumber"
               name="phoneNumber"
               type="tel"
               value={formData.phoneNumber}
               onChange={handleChange}
+              required
               placeholder="+1 (555) 123-4567"
             />
           </div>

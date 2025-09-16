@@ -4,10 +4,10 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, businessName, phoneNumber } = await request.json()
+    const { name, email, password, businessName, businessAddress, phoneNumber } = await request.json()
 
     // Validate required fields
-    if (!name || !email || !password || !businessName) {
+    if (!name || !email || !password || !businessName || !businessAddress || !phoneNumber) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -27,6 +27,15 @@ export async function POST(request: NextRequest) {
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      )
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
         { status: 400 }
       )
     }
@@ -60,7 +69,8 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         business_name: businessName,
-        phone_number: phoneNumber || null,
+        business_address: businessAddress,
+        phone_number: phoneNumber,
         plan: 'free',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

@@ -19,7 +19,8 @@ import {
   Star,
   Zap,
   Shield,
-  Smartphone
+  Smartphone,
+  DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -81,21 +82,26 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white shadow-sm border-b">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg shadow-sm border-b border-emerald-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <span className="text-2xl font-bold text-gray-900">MiniCRM</span>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">M</span>
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                MiniCRM
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#home" className="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-              <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+              <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
+              <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
+              <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
             </div>
 
             {/* Auth Buttons */}
@@ -103,7 +109,7 @@ export default function HomePage() {
               {session ? (
                 <Button 
                   onClick={() => router.push('/dashboard')}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 >
                   Go to Dashboard
                 </Button>
@@ -112,13 +118,13 @@ export default function HomePage() {
                   <Button 
                     onClick={handleLogin}
                     variant="outline"
-                    className="border-green-500 text-green-500 hover:bg-green-50"
+                    className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-600 transition-all duration-200"
                   >
                     Login
                   </Button>
                   <Button 
                     onClick={handleRegister}
-                    className="bg-green-500 hover:bg-green-600 text-white"
+                    className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                   >
                     Register
                   </Button>
@@ -127,7 +133,7 @@ export default function HomePage() {
               
               {/* Mobile menu button */}
               <button
-                className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
+                className="md:hidden p-2 rounded-lg text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -137,11 +143,11 @@ export default function HomePage() {
 
           {/* Mobile Navigation */}
           {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-4">
-                <a href="#home" className="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
-                <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-                <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+            <div className="md:hidden py-4 border-t border-emerald-100">
+              <div className="flex flex-col space-y-2">
+                <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
+                <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
+                <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
               </div>
             </div>
           )}
@@ -149,84 +155,150 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="py-20 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="home" className="py-24 bg-gradient-to-br from-emerald-50 via-white to-green-50 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat'
+          }}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium mb-8">
+              <Star className="w-4 h-4 mr-2" />
+              Trusted by 1000+ businesses
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
               Manage Customers, Orders & Invoices
-              <span className="block text-green-500">— All in One Place</span>
+              <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                — All in One Place
+              </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Send invoices on WhatsApp, track payments, and grow your business with our simple yet powerful CRM.
+            
+            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
+              Send invoices on WhatsApp, track payments, and grow your business with our simple yet powerful CRM. 
+              <span className="text-emerald-600 font-semibold"> Start free today!</span>
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
               <Button 
                 onClick={handleGetStarted}
                 size="lg"
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
+                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-10 py-4 text-xl font-semibold shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300"
               >
                 Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
               <Button 
                 onClick={scrollToFeatures}
                 variant="outline"
                 size="lg"
-                className="px-8 py-3 text-lg"
+                className="px-10 py-4 text-xl font-semibold border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-300"
               >
                 See How It Works
               </Button>
+            </div>
+
+            {/* Demo preview */}
+            <div className="relative max-w-5xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-2xl border border-emerald-200 overflow-hidden">
+                <div className="bg-gray-100 px-6 py-4 flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                  <div className="ml-4 text-sm text-gray-600">MiniCRM Dashboard</div>
+                </div>
+                <div className="p-8 bg-gradient-to-br from-emerald-50 to-green-50">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-gray-900">Total Customers</h3>
+                        <Users className="h-8 w-8 text-emerald-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600">1,234</div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-gray-900">Pending Orders</h3>
+                        <ShoppingCart className="h-8 w-8 text-amber-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-amber-600">56</div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-gray-900">Revenue</h3>
+                        <DollarSign className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-green-600">$45,678</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Features</h2>
-            <p className="text-xl text-gray-600">Everything you need to manage your business</p>
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium mb-6">
+              <Zap className="w-4 h-4 mr-2" />
+              Powerful Features
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Everything you need to 
+              <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                manage your business
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From customer management to invoice generation, we've got all the tools you need to grow your business.
+            </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-6 w-6 text-green-500" />
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-emerald-100 hover:border-emerald-200 bg-gradient-to-br from-white to-emerald-50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Customer Manager</h3>
-                <p className="text-gray-600">Save customer contacts in one place with tags and notes.</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Customer Manager</h3>
+                <p className="text-gray-600 leading-relaxed">Save customer contacts in one place with tags, notes, and Instagram handles for better organization.</p>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <ShoppingCart className="h-6 w-6 text-blue-600" />
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-blue-100 hover:border-blue-200 bg-gradient-to-br from-white to-blue-50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <ShoppingCart className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Order Tracking</h3>
-                <p className="text-gray-600">Track orders from New to Completed with status updates.</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Order Tracking</h3>
+                <p className="text-gray-600 leading-relaxed">Track orders from creation to completion with real-time status updates and due date management.</p>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <FileText className="h-6 w-6 text-amber-600" />
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-purple-100 hover:border-purple-200 bg-gradient-to-br from-white to-purple-50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <FileText className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Invoice Generator</h3>
-                <p className="text-gray-600">Create and send professional invoices instantly.</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Invoice Generator</h3>
+                <p className="text-gray-600 leading-relaxed">Create professional invoices with your business branding and send them via WhatsApp instantly.</p>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="h-6 w-6 text-purple-600" />
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-200 bg-gradient-to-br from-white to-orange-50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <MessageCircle className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">WhatsApp CRM</h3>
-                <p className="text-gray-600">One-click reminders and messages to customers.</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">WhatsApp CRM</h3>
+                <p className="text-gray-600 leading-relaxed">Send invoices, messages, and updates directly through WhatsApp for instant communication.</p>
               </CardContent>
             </Card>
           </div>
@@ -234,57 +306,84 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-emerald-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600">Get started in just 3 simple steps</p>
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium mb-6">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Simple Process
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Get started in 
+              <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                just 3 simple steps
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our streamlined process makes it easy to manage your business from day one.
+            </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">1</span>
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-3xl font-bold text-white">1</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Add Customer</h3>
-              <p className="text-gray-600">Start by adding your customer details, contact information, and preferences.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Add Customer</h3>
+              <p className="text-gray-600 leading-relaxed text-lg">Start by adding your customer details, contact information, and preferences to build your customer base.</p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">2</span>
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-3xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Create Order</h3>
-              <p className="text-gray-600">Create orders for your customers and track their progress from start to finish.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Create Order</h3>
+              <p className="text-gray-600 leading-relaxed text-lg">Create orders for your customers and track their progress from start to finish with real-time updates.</p>
             </div>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">3</span>
+            <div className="text-center group">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Send Invoice on WhatsApp</h3>
-              <p className="text-gray-600">Generate invoices and send them directly to customers via WhatsApp.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Send Invoice on WhatsApp</h3>
+              <p className="text-gray-600 leading-relaxed text-lg">Generate professional invoices and send them directly to customers via WhatsApp for instant delivery.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Call-to-Action Section */}
-      <section className="py-20 bg-green-500">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Start Managing Your Business in 5 Minutes
+      <section className="py-24 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundRepeat: 'repeat'
+          }}></div>
+        </div>
+        
+        <div className="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative">
+          <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
+            <Shield className="w-4 h-4 mr-2" />
+            Trusted by 1000+ businesses worldwide
+          </div>
+          
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight">
+            Start Managing Your Business
+            <span className="block">in 5 Minutes</span>
           </h2>
-          <p className="text-xl text-green-100 mb-8">
-            Join thousands of businesses already using MiniCRM to streamline their operations.
+          
+          <p className="text-xl md:text-2xl text-emerald-100 mb-12 max-w-4xl mx-auto leading-relaxed">
+            Join thousands of businesses already using MiniCRM to streamline their operations and grow their revenue.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-white text-green-500 hover:bg-gray-100 px-8 py-3 text-lg"
+              className="bg-white text-emerald-600 hover:bg-gray-100 px-10 py-4 text-xl font-semibold shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300"
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -302,24 +401,31 @@ export default function HomePage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Login with Google
+              Get Started Free
             </Button>
             <Button 
               onClick={handleDemoMode}
               variant="outline"
               size="lg"
-              className="border-white text-white hover:bg-white hover:text-green-500 px-8 py-3 text-lg"
+              className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 px-10 py-4 text-xl font-semibold transition-all duration-300"
             >
               {isDemoLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
                   Loading Demo...
                 </>
               ) : (
-                'Try Demo Mode'
+                <>
+                  <Smartphone className="h-5 w-5 mr-3" />
+                  Try Demo Mode
+                </>
               )}
             </Button>
           </div>
+          
+          <p className="text-emerald-200 text-sm mt-8">
+            No credit card required • Free forever • Setup in minutes
+          </p>
         </div>
       </section>
 

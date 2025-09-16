@@ -52,3 +52,36 @@ export interface UserProfile {
   photoURL?: string;
 }
 
+export interface Product {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  price: number;
+  sku?: string;
+  image_url?: string;
+  status: 'active' | 'inactive' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductFormData {
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  sku: string;
+  status: 'active' | 'inactive' | 'archived';
+  image?: File;
+}
+
+export interface ProductStats {
+  totalProducts: number;
+  activeProducts: number;
+  inactiveProducts: number;
+  archivedProducts: number;
+  totalValue: number;
+  averagePrice: number;
+}
+
