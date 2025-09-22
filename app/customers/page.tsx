@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerEditModal } from '@/components/customers/CustomerEditModal';
+import { SubscriptionLimits } from '@/components/subscription/SubscriptionLimits';
 import { Customer } from '@/types';
 
 export default function CustomersPage() {
@@ -120,6 +121,9 @@ export default function CustomersPage() {
             Add Customer
           </Button>
         </div>
+
+        {/* Subscription Limits Warning */}
+        <SubscriptionLimits type="customers" />
 
         {customers.length === 0 ? (
           <Card>

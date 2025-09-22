@@ -78,7 +78,7 @@ export function OrderEditModal({ order, isOpen, onClose, onSuccess }: OrderEditM
         return;
       }
 
-      setCustomers(data || []);
+      setCustomers(data as Customer[] || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
     }

@@ -34,7 +34,7 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
     if (customer && isOpen) {
       setFormData({
         name: customer.name,
-        email: customer.email,
+        email: customer.email || '',
         phone: customer.phone || '',
         insta_handle: customer.insta_handle || '',
         notes: customer.notes || '',

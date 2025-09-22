@@ -153,7 +153,7 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
 
       // Upload new image if provided
       if (formData.image) {
-        imageUrl = await uploadImage(formData.image);
+        imageUrl = await uploadImage(formData.image) || undefined;
         if (!imageUrl) {
           toast({
             title: "Upload Error",

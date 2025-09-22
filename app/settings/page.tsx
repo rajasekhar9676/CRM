@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Settings, User, Building2 } from 'lucide-react';
 import { BusinessProfileForm } from '@/components/settings/BusinessProfileForm';
 import { BusinessProfileDebug } from '@/components/settings/BusinessProfileDebug';
+import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -45,6 +46,9 @@ export default function SettingsPage() {
 
         {/* Business Profile Debug Section */}
         <BusinessProfileDebug />
+
+        {/* Subscription Management Section */}
+        <SubscriptionManagement />
 
         {/* Business Profile Section */}
         <BusinessProfileForm />

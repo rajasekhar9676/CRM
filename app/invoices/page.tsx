@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Edit, Trash2, Eye, MessageCircle, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { InvoiceViewModal } from '@/components/invoices/InvoiceViewModal';
+import { SubscriptionLimits } from '@/components/subscription/SubscriptionLimits';
 
 interface Invoice {
   id: string;
@@ -299,6 +300,9 @@ export default function InvoicesPage() {
             Generate Invoice
           </Button>
         </div>
+
+        {/* Subscription Limits Warning */}
+        <SubscriptionLimits type="invoices" />
 
         {invoices.length === 0 ? (
           <Card>

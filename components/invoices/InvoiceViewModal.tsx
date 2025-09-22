@@ -183,7 +183,7 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
     doc.setFont('helvetica', 'normal');
     doc.text(customer.name, margin, yPosition);
     yPosition += 4;
-    doc.text(customer.email, margin, yPosition);
+    doc.text(customer.email || '', margin, yPosition);
     if (customer.phone) {
       yPosition += 4;
       doc.text(customer.phone, margin, yPosition);
@@ -389,16 +389,16 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
                           <span>{customer.phone}</span>
                         </div>
                       )}
-                      {customer.instagram_handle && (
+                      {customer.insta_handle && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Instagram:</span>
                           <a 
-                            href={`https://instagram.com/${customer.instagram_handle}`}
+                            href={`https://instagram.com/${customer.insta_handle}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline"
                           >
-                            @{customer.instagram_handle}
+                            @{customer.insta_handle}
                           </a>
                         </div>
                       )}

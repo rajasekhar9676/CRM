@@ -85,3 +85,35 @@ export interface ProductStats {
   averagePrice: number;
 }
 
+export type SubscriptionPlan = 'free' | 'pro' | 'business';
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  status: 'active' | 'canceled' | 'past_due' | 'unpaid';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanLimits {
+  maxCustomers: number;
+  maxInvoicesPerMonth: number;
+  hasProductManagement: boolean;
+  hasWhatsAppCRM: boolean;
+  hasPrioritySupport: boolean;
+}
+
+export interface PlanFeatures {
+  name: string;
+  price: number;
+  currency: string;
+  description: string;
+  features: string[];
+  limits: PlanLimits;
+  stripePriceId?: string;
+}
+

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AuthModal from '@/components/auth/AuthModal';
+import { PricingSection } from '@/components/pricing/PricingSection';
 import { 
   Loader2, 
   Users, 
@@ -101,6 +102,7 @@ export default function HomePage() {
             <div className="hidden md:flex items-center space-x-8">
               <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
               <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
               <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
             </div>
 
@@ -147,6 +149,7 @@ export default function HomePage() {
               <div className="flex flex-col space-y-2">
                 <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
                 <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
+                <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
                 <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
               </div>
             </div>
@@ -351,6 +354,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* Call-to-Action Section */}
       <section className="py-24 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 relative overflow-hidden">

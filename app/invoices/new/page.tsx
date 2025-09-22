@@ -64,7 +64,7 @@ export default function NewInvoicePage() {
         return;
       }
 
-      setCustomers(data || []);
+      setCustomers(data as Customer[] || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
     }

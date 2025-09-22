@@ -1,13 +1,28 @@
 import { withAuth } from 'next-auth/middleware'
+import { NextResponse } from 'next/server'
 
 export default withAuth(
   function middleware(req) {
-    // Add any additional middleware logic here
+    // Handle admin routes - redirect to login if not authenticated
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      if (!req.nextauth.token) {
+        const signInUrl = new URL('/auth/signin', req.url)
+        signInUrl.searchParams.set('callbackUrl', req.url)
+        return NextResponse.redirect(signInUrl)
+      }
+    }
+    
+    return NextResponse.next()
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Protect dashboard and related routes
+        // For admin routes, we handle redirects in the middleware function above
+        if (req.nextUrl.pathname.startsWith('/admin')) {
+          return true // Let the middleware function handle the redirect
+        }
+        
+        // Protect other routes that require authentication
         if (req.nextUrl.pathname.startsWith('/dashboard') ||
             req.nextUrl.pathname.startsWith('/customers') ||
             req.nextUrl.pathname.startsWith('/orders') ||
@@ -27,6 +42,7 @@ export const config = {
     '/customers/:path*',
     '/orders/:path*',
     '/invoices/:path*',
-    '/settings/:path*'
+    '/settings/:path*',
+    '/admin/:path*'
   ]
 }
