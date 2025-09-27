@@ -16,7 +16,7 @@ export default function VerifySetupPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [adminExists, setAdminExists] = useState(false);
-  const [adminUser, setAdminUser] = useState(null);
+  const [adminUser, setAdminUser] = useState<{ email: string; name: string; role: string } | null>(null);
   const [setupError, setSetupError] = useState('');
 
   useEffect(() => {
