@@ -10,6 +10,7 @@ import { Settings, User, Building2 } from 'lucide-react';
 import { BusinessProfileForm } from '@/components/settings/BusinessProfileForm';
 import { BusinessProfileDebug } from '@/components/settings/BusinessProfileDebug';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
+import { PricingSection } from '@/components/pricing/PricingSection';
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -49,6 +50,22 @@ export default function SettingsPage() {
 
         {/* Subscription Management Section */}
         <SubscriptionManagement />
+
+        {/* Pricing Plans Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Upgrade Your Plan
+            </CardTitle>
+            <CardDescription>
+              Choose the perfect plan for your business needs. All plans include 30-day money-back guarantee.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PricingSection showTitle={false} />
+          </CardContent>
+        </Card>
 
         {/* Business Profile Section */}
         <BusinessProfileForm />

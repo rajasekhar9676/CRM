@@ -40,7 +40,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     setLoading(plan);
 
     try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch('/api/cashfree/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,16 +50,41 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
 
       const data = await response.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.authLink) {
+        // Redirect to Cashfree payment page
+        window.location.href = data.authLink;
+      } else if (data.setupRequired) {
+        toast({
+          title: "Setup Required",
+          description: "Cashfree payment integration needs to be configured. Please contact support.",
+          variant: "destructive",
+        });
+      } else if (data.databaseError) {
+        toast({
+          title: "Database Error",
+          description: "Please run the database setup script to create the subscriptions table.",
+          variant: "destructive",
+        });
+      } else if (data.cashfreeError) {
+        toast({
+          title: "Payment Error",
+          description: data.details || "Failed to create subscription with Cashfree. Please try again.",
+          variant: "destructive",
+        });
+      } else if (data.apiError) {
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to payment gateway. Please check your internet connection.",
+          variant: "destructive",
+        });
       } else {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.error || 'Failed to create subscription');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating subscription:', error);
       toast({
         title: "Error",
-        description: "Failed to start checkout process. Please try again.",
+        description: "Failed to start subscription process. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -71,8 +96,10 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     switch (plan) {
       case 'free':
         return <Zap className="h-6 w-6" />;
-      case 'pro':
+      case 'starter':
         return <Crown className="h-6 w-6" />;
+      case 'pro':
+        return <Building2 className="h-6 w-6" />;
       case 'business':
         return <Building2 className="h-6 w-6" />;
     }
@@ -82,6 +109,8 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     switch (plan) {
       case 'free':
         return 'border-gray-200 hover:border-gray-300';
+      case 'starter':
+        return 'border-green-200 hover:border-green-300 bg-gradient-to-br from-green-50 to-emerald-50';
       case 'pro':
         return 'border-blue-200 hover:border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50';
       case 'business':
@@ -93,6 +122,8 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     switch (plan) {
       case 'free':
         return 'outline';
+      case 'starter':
+        return 'default';
       case 'pro':
         return 'default';
       case 'business':
@@ -121,22 +152,22 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-4 gap-8">
           {Object.entries(SUBSCRIPTION_PLANS).map(([planKey, plan]) => {
             const planType = planKey as SubscriptionPlan;
-            const isPopular = planType === 'pro';
+            const isPopular = planType === 'starter';
             const isBusiness = planType === 'business';
 
             return (
               <Card
                 key={planKey}
                 className={`relative transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-2 ${getPlanColor(planType)} ${
-                  isPopular ? 'ring-2 ring-blue-500 scale-105' : ''
+                  isPopular ? 'ring-2 ring-green-500 scale-105' : ''
                 }`}
               >
                 {isPopular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-600 text-white px-4 py-1 text-sm font-medium">
+                    <Badge className="bg-green-600 text-white px-4 py-1 text-sm font-medium">
                       Most Popular
                     </Badge>
                   </div>
@@ -145,8 +176,9 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                 <CardHeader className="text-center pb-8">
                   <div className="flex justify-center mb-4">
                     <div className={`p-3 rounded-full ${
-                      isPopular ? 'bg-blue-100 text-blue-600' : 
+                      isPopular ? 'bg-green-100 text-green-600' : 
                       isBusiness ? 'bg-purple-100 text-purple-600' : 
+                      planType === 'pro' ? 'bg-blue-100 text-blue-600' :
                       'bg-gray-100 text-gray-600'
                     }`}>
                       {getPlanIcon(planType)}
@@ -187,9 +219,11 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                       variant={getButtonVariant(planType)}
                       className={`w-full h-12 text-lg font-semibold ${
                         isPopular 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : isBusiness
                           ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : planType === 'pro'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : ''
                       }`}
                     >

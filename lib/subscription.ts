@@ -20,6 +20,27 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
       hasPrioritySupport: false,
     },
   },
+  starter: {
+    name: 'Starter',
+    price: 250,
+    currency: 'INR',
+    description: 'Perfect for small businesses',
+    features: [
+      'Up to 200 customers',
+      '100 invoices per month',
+      'Basic product management',
+      'Email support',
+      'Basic analytics'
+    ],
+    limits: {
+      maxCustomers: 200,
+      maxInvoicesPerMonth: 100,
+      hasProductManagement: true,
+      hasWhatsAppCRM: false,
+      hasPrioritySupport: false,
+    },
+    cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_STARTER_PLAN_ID,
+  },
   pro: {
     name: 'Pro',
     price: 499,
@@ -28,19 +49,19 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
     features: [
       'Unlimited customers',
       'Unlimited invoices',
-      'Product management',
+      'Advanced product management',
       'Advanced analytics',
-      'Email support',
-      'Priority features'
+      'Priority email support',
+      'WhatsApp integration'
     ],
     limits: {
       maxCustomers: -1, // Unlimited
       maxInvoicesPerMonth: -1, // Unlimited
       hasProductManagement: true,
-      hasWhatsAppCRM: false,
+      hasWhatsAppCRM: true,
       hasPrioritySupport: false,
     },
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
+    cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_PRO_PLAN_ID,
   },
   business: {
     name: 'Business',
@@ -49,11 +70,11 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
     description: 'Complete business solution',
     features: [
       'Everything in Pro',
-      'WhatsApp CRM integration',
-      'Priority support',
+      'Advanced WhatsApp CRM',
+      'Priority phone support',
       'Advanced automation',
       'Custom integrations',
-      'Phone support'
+      'Dedicated account manager'
     ],
     limits: {
       maxCustomers: -1, // Unlimited
@@ -62,7 +83,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
       hasWhatsAppCRM: true,
       hasPrioritySupport: true,
     },
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID,
+    cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_BUSINESS_PLAN_ID,
   },
 };
 

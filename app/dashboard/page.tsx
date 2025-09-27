@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
 interface DashboardStats {
@@ -216,6 +217,54 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+
+        {/* Current Plan & Upgrade Section */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              Your Plan & Upgrade Options
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Manage your subscription and unlock more features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-gray-900 mb-2">Current Plan: Free</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  You're currently on the free plan with basic features.
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Customers:</span>
+                    <span className="font-medium">{stats.totalCustomers}/50</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Invoices this month:</span>
+                    <span className="font-medium">0/20</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-green-200">
+                <h3 className="font-semibold text-gray-900 mb-2">Upgrade Benefits</h3>
+                <ul className="text-sm text-gray-600 space-y-1 mb-3">
+                  <li>• Unlimited customers & invoices</li>
+                  <li>• Advanced product management</li>
+                  <li>• WhatsApp CRM integration</li>
+                  <li>• Priority support</li>
+                </ul>
+                <Button 
+                  onClick={() => router.push('/pricing')}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  View Plans & Upgrade
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <Card className="bg-gradient-to-br from-white to-emerald-50 border-emerald-200">

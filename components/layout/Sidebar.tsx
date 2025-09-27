@@ -11,7 +11,8 @@ import {
   Settings,
   Package,
   Menu,
-  X
+  X,
+  Crown
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Invoices', href: '/invoices', icon: FileText },
+  { name: 'Pricing', href: '/pricing', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

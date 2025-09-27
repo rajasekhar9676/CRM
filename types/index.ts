@@ -85,7 +85,7 @@ export interface ProductStats {
   averagePrice: number;
 }
 
-export type SubscriptionPlan = 'free' | 'pro' | 'business';
+export type SubscriptionPlan = 'free' | 'starter' | 'pro' | 'business';
 
 export interface Subscription {
   plan: SubscriptionPlan;
@@ -95,6 +95,8 @@ export interface Subscription {
   cancelAtPeriodEnd: boolean;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
+  cashfreeSubscriptionId?: string;
+  cashfreeCustomerId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -115,5 +117,6 @@ export interface PlanFeatures {
   features: string[];
   limits: PlanLimits;
   stripePriceId?: string;
+  cashfreePlanId?: string;
 }
 
