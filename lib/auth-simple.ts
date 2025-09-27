@@ -2,6 +2,7 @@ import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { supabase } from './supabase'
+import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -32,8 +33,9 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // For now, just check if password matches (you can implement proper hashing later)
-          if (credentials.password !== user.password) {
+          // Check if password matches using bcrypt
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isPasswordValid) {
             return null
           }
 
