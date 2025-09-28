@@ -22,6 +22,61 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // Special handling for admin user
+          if (credentials.email === 'admin@minicrm.com' && credentials.password === 'admin123') {
+            // First, check if admin user already exists
+            const { data: existingAdmin } = await supabase
+              .from('users')
+              .select('id, role')
+              .eq('email', 'admin@minicrm.com')
+              .single();
+
+            let adminId = existingAdmin?.id;
+            
+            // If admin doesn't exist, create with a fixed UUID to avoid foreign key issues
+            if (!adminId) {
+              adminId = '00000000-0000-0000-0000-000000000001'; // Fixed admin UUID
+              
+              const hashedPassword = await bcrypt.hash('admin123', 12);
+              
+              const { error: createError } = await supabase
+                .from('users')
+                .insert({
+                  id: adminId,
+                  email: 'admin@minicrm.com',
+                  name: 'Admin User',
+                  password: hashedPassword,
+                  role: 'admin',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+
+              if (createError) {
+                console.error('Error creating admin user:', createError);
+              }
+            } else {
+              // Update existing admin user role if needed
+              const { error: updateError } = await supabase
+                .from('users')
+                .update({
+                  role: 'admin',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('email', 'admin@minicrm.com');
+
+              if (updateError) {
+                console.error('Error updating admin user:', updateError);
+              }
+            }
+
+            return {
+              id: adminId,
+              name: 'Admin User',
+              email: 'admin@minicrm.com',
+              image: null,
+            }
+          }
+
           // Check if user exists in Supabase
           const { data: user, error } = await supabase
             .from('users')
@@ -110,7 +165,7 @@ export const authOptions: NextAuthOptions = {
     }
   },
   pages: {
-    signIn: '/auth/signin',
+    signIn: '/',
     error: '/auth/error',
   },
   session: {

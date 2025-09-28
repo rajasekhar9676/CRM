@@ -40,10 +40,16 @@ export default function HomePage() {
     }
   }, [session, status, router]);
 
-  // Handle auth modal from URL parameters (when redirected from middleware)
+  // Handle auth modal from URL parameters (when redirected from middleware or NextAuth)
   useEffect(() => {
     const authParam = searchParams.get('auth');
-    if (authParam === 'login' && !session) {
+    const callbackUrl = searchParams.get('callbackUrl');
+    
+    // If there's a callbackUrl parameter, it means user was redirected for authentication
+    if (callbackUrl && !session) {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    } else if (authParam === 'login' && !session) {
       setAuthMode('login');
       setIsAuthModalOpen(true);
     } else if (authParam === 'register' && !session) {

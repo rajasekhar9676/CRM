@@ -90,7 +90,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent('/admin')}`);
+      router.push(`/auth/admin-signin?callbackUrl=${encodeURIComponent('/admin')}`);
       return;
     }
 
@@ -103,7 +103,14 @@ export default function AdminPage() {
     try {
       setLoading(true);
       
-      // Check if user is admin
+      // Check if user is admin by email (since admin@minicrm.com is always admin)
+      if (session?.user?.email === 'admin@minicrm.com') {
+        setIsAdmin(true);
+        await fetchAllData();
+        return;
+      }
+      
+      // Check if user is admin by role
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('role')
@@ -345,18 +352,18 @@ export default function AdminPage() {
   );
 
   const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredInvoices = invoices.filter(invoice =>
-    invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredInvoices = invoices.filter(invoice =>
+  (invoice.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (invoice.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+);
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (status === 'loading' || loading) {
@@ -445,10 +452,6 @@ export default function AdminPage() {
               <Button onClick={fetchAllData} variant="outline" size="sm">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
-              </Button>
-              <Button onClick={() => router.push('/dashboard')} variant="outline" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                User Dashboard
               </Button>
             </div>
           </div>

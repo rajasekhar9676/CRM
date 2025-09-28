@@ -21,7 +21,7 @@ export default function VerifySetupPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin?callbackUrl=/admin/verify-setup');
+      router.push('/auth/admin-signin?callbackUrl=/admin/verify-setup');
       return;
     }
 
@@ -207,11 +207,11 @@ WHERE email = 'admin@minicrm.com';`;
               )}
               <div className="mt-4 space-y-2">
                 <Button
-                  onClick={() => router.push('/auth/signin')}
+                  onClick={() => router.push('/auth/admin-signin')}
                   className="w-full"
                 >
                   <Shield className="h-4 w-4 mr-2" />
-                  Go to Login Page
+                  Go to Admin Login
                 </Button>
                 <Button
                   variant="outline"
