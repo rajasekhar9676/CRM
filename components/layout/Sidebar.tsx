@@ -12,7 +12,8 @@ import {
   Package,
   Menu,
   X,
-  Crown
+  Crown,
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Pricing', href: '/pricing', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Admin Panel', href: '/auth/admin-signin', icon: Shield },
 ];
 
 interface SidebarProps {

@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function SignInPage() {
+export default function AdminSignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,15 +40,30 @@ export default function SignInPage() {
       }
 
       if (result?.ok) {
-        toast({
-          title: "Login Successful",
-          description: "Redirecting to admin panel...",
-        });
-        
         // Check if user is admin after login
         const session = await getSession();
         if (session?.user) {
-          router.push(callbackUrl);
+          // Check if user has admin role
+          const { data: user } = await fetch('/api/auth/check-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: session.user.email }),
+          }).then(res => res.json());
+
+          if (user?.role === 'admin') {
+            toast({
+              title: "Admin Login Successful",
+              description: "Redirecting to admin panel...",
+            });
+            router.push(callbackUrl);
+          } else {
+            toast({
+              title: "Access Denied",
+              description: "You don't have admin privileges. Redirecting to user dashboard...",
+              variant: "destructive",
+            });
+            router.push('/dashboard');
+          }
         }
       }
     } catch (error) {
@@ -75,7 +90,7 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Shield className="mx-auto h-12 w-12 text-blue-600" />
+          <Shield className="mx-auto h-12 w-12 text-red-600" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Admin Login
           </h2>
@@ -86,9 +101,9 @@ export default function SignInPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Admin Sign In</CardTitle>
             <CardDescription>
-              Enter your credentials to access the admin dashboard
+              Enter your admin credentials to access the admin dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -152,7 +167,7 @@ export default function SignInPage() {
                       Signing in...
                     </>
                   ) : (
-                    'Sign in'
+                    'Sign in as Admin'
                   )}
                 </Button>
               </div>

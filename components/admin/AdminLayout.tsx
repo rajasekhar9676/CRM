@@ -146,15 +146,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="w-full"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="space-y-2">
+            <Link href="/dashboard">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                User Dashboard
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="w-full"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 

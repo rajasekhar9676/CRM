@@ -3,12 +3,26 @@ import { NextResponse } from 'next/server'
 
 export default withAuth(
   function middleware(req) {
-    // Handle admin routes - redirect to login if not authenticated
+    // Handle admin routes - redirect to admin login if not authenticated
     if (req.nextUrl.pathname.startsWith('/admin')) {
       if (!req.nextauth.token) {
-        const signInUrl = new URL('/auth/signin', req.url)
+        const signInUrl = new URL('/auth/admin-signin', req.url)
         signInUrl.searchParams.set('callbackUrl', req.url)
         return NextResponse.redirect(signInUrl)
+      }
+    }
+    
+    // Handle user routes - redirect to homepage with auth modal if not authenticated
+    if (req.nextUrl.pathname.startsWith('/dashboard') ||
+        req.nextUrl.pathname.startsWith('/customers') ||
+        req.nextUrl.pathname.startsWith('/orders') ||
+        req.nextUrl.pathname.startsWith('/invoices') ||
+        req.nextUrl.pathname.startsWith('/settings')) {
+      if (!req.nextauth.token) {
+        const homeUrl = new URL('/', req.url)
+        homeUrl.searchParams.set('auth', 'login')
+        homeUrl.searchParams.set('callbackUrl', req.url)
+        return NextResponse.redirect(homeUrl)
       }
     }
     

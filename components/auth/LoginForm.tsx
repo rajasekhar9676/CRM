@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 
 interface LoginFormProps {
@@ -22,6 +22,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -43,7 +44,9 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       })
 
       if (result?.ok) {
-        router.push('/dashboard')
+        // Get callback URL from search params or default to dashboard
+        const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+        router.push(callbackUrl)
       } else {
         setError('Invalid email or password')
       }
@@ -57,7 +60,8 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      await signIn('google', { callbackUrl: '/dashboard' })
+      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+      await signIn('google', { callbackUrl })
     } catch (error) {
       setError('Google sign-in failed. Please try again.')
       setIsLoading(false)

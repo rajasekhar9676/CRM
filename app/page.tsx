@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +28,7 @@ import Link from 'next/link';
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -38,6 +39,18 @@ export default function HomePage() {
       router.push('/dashboard');
     }
   }, [session, status, router]);
+
+  // Handle auth modal from URL parameters (when redirected from middleware)
+  useEffect(() => {
+    const authParam = searchParams.get('auth');
+    if (authParam === 'login' && !session) {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    } else if (authParam === 'register' && !session) {
+      setAuthMode('register');
+      setIsAuthModalOpen(true);
+    }
+  }, [searchParams, session]);
 
   const handleGetStarted = () => {
     if (session) {
