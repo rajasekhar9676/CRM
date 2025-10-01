@@ -19,18 +19,20 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }: Au
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`sm:max-w-md ${mode === 'register' ? 'md:max-w-2xl' : ''} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="text-center">
-            {mode === 'login' ? 'Sign In to MiniCRM' : 'Create Your Account'}
+            {mode === 'login' ? 'Sign In to BizMitra' : 'Create Your Account'}
           </DialogTitle>
         </DialogHeader>
         
-        {mode === 'login' ? (
-          <LoginForm onSwitchToRegister={switchToRegister} />
-        ) : (
-          <RegisterForm onSwitchToLogin={switchToLogin} />
-        )}
+        <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+          {mode === 'login' ? (
+            <LoginForm onSwitchToRegister={switchToRegister} />
+          ) : (
+            <RegisterForm onSwitchToLogin={switchToLogin} />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
