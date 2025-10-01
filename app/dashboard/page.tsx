@@ -39,7 +39,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/');
+      // Store the intended destination before redirecting
+      sessionStorage.setItem('redirectAfterLogin', '/dashboard');
+      router.push('/?auth=login');
       return;
     }
 
