@@ -36,9 +36,17 @@ export default function HomePage() {
 
   useEffect(() => {
     if (session && status === 'authenticated') {
-      // Check if there's a callback URL from the query params
-      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-      router.push(callbackUrl);
+      // Check sessionStorage first, then query params, then default to dashboard
+      const storedRedirect = sessionStorage.getItem('redirectAfterLogin');
+      const callbackUrl = searchParams.get('callbackUrl');
+      const redirectTo = storedRedirect || callbackUrl || '/dashboard';
+      
+      // Clear the stored redirect
+      if (storedRedirect) {
+        sessionStorage.removeItem('redirectAfterLogin');
+      }
+      
+      router.push(redirectTo);
     }
   }, [session, status, router, searchParams]);
 
@@ -49,9 +57,16 @@ export default function HomePage() {
     
     // If there's a callbackUrl parameter, it means user was redirected for authentication
     if (callbackUrl && !session) {
+      // Store the intended destination in sessionStorage
+      sessionStorage.setItem('redirectAfterLogin', callbackUrl);
       setAuthMode('login');
       setIsAuthModalOpen(true);
     } else if (authParam === 'login' && !session) {
+      // If user came from middleware redirect, check if they were trying to access a protected route
+      const referrer = document.referrer;
+      if (referrer && (referrer.includes('/dashboard') || referrer.includes('/customers') || referrer.includes('/orders') || referrer.includes('/invoices') || referrer.includes('/settings'))) {
+        sessionStorage.setItem('redirectAfterLogin', '/dashboard');
+      }
       setAuthMode('login');
       setIsAuthModalOpen(true);
     } else if (authParam === 'register' && !session) {

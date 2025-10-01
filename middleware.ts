@@ -19,10 +19,8 @@ export default withAuth(
         req.nextUrl.pathname.startsWith('/invoices') ||
         req.nextUrl.pathname.startsWith('/settings')) {
       if (!req.nextauth.token) {
-        const homeUrl = new URL('/', req.url)
-        homeUrl.searchParams.set('auth', 'login')
-        homeUrl.searchParams.set('callbackUrl', req.nextUrl.pathname)
-        return NextResponse.redirect(homeUrl)
+        // Simple redirect to home page - let client handle the callback URL
+        return NextResponse.redirect(new URL('/?auth=login', req.url))
       }
     }
     

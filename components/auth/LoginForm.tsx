@@ -44,9 +44,17 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       })
 
       if (result?.ok) {
-        // Get callback URL from search params or default to dashboard
+        // Check sessionStorage first, then search params, then default to dashboard
+        const storedRedirect = sessionStorage.getItem('redirectAfterLogin')
         const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-        router.push(callbackUrl)
+        const redirectTo = storedRedirect || callbackUrl
+        
+        // Clear the stored redirect
+        if (storedRedirect) {
+          sessionStorage.removeItem('redirectAfterLogin')
+        }
+        
+        router.push(redirectTo)
       } else {
         setError('Invalid email or password')
       }
@@ -60,8 +68,12 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
+      // Check sessionStorage first, then search params, then default to dashboard
+      const storedRedirect = sessionStorage.getItem('redirectAfterLogin')
       const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-      await signIn('google', { callbackUrl })
+      const redirectTo = storedRedirect || callbackUrl
+      
+      await signIn('google', { callbackUrl: redirectTo })
     } catch (error) {
       setError('Google sign-in failed. Please try again.')
       setIsLoading(false)
