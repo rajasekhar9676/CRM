@@ -39,9 +39,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      // Store the intended destination before redirecting
-      sessionStorage.setItem('redirectAfterLogin', '/dashboard');
-      router.push('/?auth=login');
+      try {
+        // Store the intended destination before redirecting
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('redirectAfterLogin', '/dashboard');
+        }
+        router.push('/?auth=login');
+      } catch (error) {
+        console.error('Error in dashboard redirect:', error);
+        router.push('/?auth=login');
+      }
       return;
     }
 

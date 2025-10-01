@@ -44,17 +44,22 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       })
 
       if (result?.ok) {
-        // Check sessionStorage first, then search params, then default to dashboard
-        const storedRedirect = sessionStorage.getItem('redirectAfterLogin')
-        const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-        const redirectTo = storedRedirect || callbackUrl
-        
-        // Clear the stored redirect
-        if (storedRedirect) {
-          sessionStorage.removeItem('redirectAfterLogin')
+        try {
+          // Check sessionStorage first, then search params, then default to dashboard
+          const storedRedirect = typeof window !== 'undefined' ? sessionStorage.getItem('redirectAfterLogin') : null
+          const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+          const redirectTo = storedRedirect || callbackUrl
+          
+          // Clear the stored redirect
+          if (storedRedirect && typeof window !== 'undefined') {
+            sessionStorage.removeItem('redirectAfterLogin')
+          }
+          
+          router.push(redirectTo)
+        } catch (error) {
+          console.error('Error in login redirect:', error)
+          router.push('/dashboard')
         }
-        
-        router.push(redirectTo)
       } else {
         setError('Invalid email or password')
       }
@@ -69,7 +74,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     setIsLoading(true)
     try {
       // Check sessionStorage first, then search params, then default to dashboard
-      const storedRedirect = sessionStorage.getItem('redirectAfterLogin')
+      const storedRedirect = typeof window !== 'undefined' ? sessionStorage.getItem('redirectAfterLogin') : null
       const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
       const redirectTo = storedRedirect || callbackUrl
       
