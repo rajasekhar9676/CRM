@@ -65,7 +65,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center px-6 py-4 border-b">
-            <h1 className="text-xl font-bold">MiniCRM</h1>
+            <h1 className="text-xl font-bold">BizMitra</h1>
           </div>
 
           {/* Navigation */}

@@ -143,7 +143,7 @@ export default function HomePage() {
                 <span className="text-white font-bold text-lg">M</span>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                MiniCRM
+                BizMitra
               </span>
             </Link>
 
@@ -261,7 +261,7 @@ export default function HomePage() {
                   <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                  <div className="ml-4 text-sm text-gray-600">MiniCRM Dashboard</div>
+                  <div className="ml-4 text-sm text-gray-600">BizMitra Dashboard</div>
                 </div>
                 <div className="p-8 bg-gradient-to-br from-emerald-50 to-green-50">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -429,7 +429,7 @@ export default function HomePage() {
           </h2>
           
           <p className="text-xl md:text-2xl text-emerald-100 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Join thousands of businesses already using MiniCRM to streamline their operations and grow their revenue.
+            Join thousands of businesses already using BizMitra to streamline their operations and grow their revenue.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -489,7 +489,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">MiniCRM</h3>
+              <h3 className="text-xl font-bold mb-4">BizMitra</h3>
               <p className="text-gray-400">Simple CRM for managing customers, orders, and invoices.</p>
             </div>
             <div>
@@ -518,7 +518,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 MiniCRM. All rights reserved.</p>
+            <p>&copy; 2024 BizMitra. All rights reserved.</p>
           </div>
         </div>
       </footer>

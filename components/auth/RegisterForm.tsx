@@ -99,7 +99,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold text-gray-900">Create Account</CardTitle>
         <CardDescription>
-          Join MiniCRM to manage your business efficiently
+          Join BizMitra to manage your business efficiently
         </CardDescription>
       </CardHeader>
       <CardContent>

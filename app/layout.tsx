@@ -8,13 +8,13 @@ import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MiniCRM - Customer Management',
+  title: 'BizMitra - Customer Management',
   description: 'A simple CRM for managing customers, orders, and invoices',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'MiniCRM',
+    title: 'BizMitra',
   },
   icons: {
     icon: '/favicon.ico',
