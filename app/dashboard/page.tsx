@@ -11,7 +11,13 @@ import {
   FileText, 
   DollarSign,
   TrendingUp,
-  Clock
+  Clock,
+  Plus,
+  ArrowRight,
+  Sparkles,
+  Target,
+  Zap,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -137,90 +143,133 @@ export default function DashboardPage() {
       value: stats.totalCustomers,
       icon: Users,
       description: 'Active customers',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
+      gradient: 'from-emerald-500 to-green-600',
+      iconBg: 'bg-gradient-to-br from-emerald-100 to-green-100',
+      iconColor: 'text-emerald-600',
+      cardBg: 'bg-gradient-to-br from-emerald-50/50 to-green-50/50',
+      borderColor: 'border-emerald-200/60',
+      shadowColor: 'shadow-emerald-100',
     },
     {
       title: 'Pending Orders',
       value: stats.pendingOrders,
       icon: Clock,
       description: 'Orders in progress',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-200',
+      gradient: 'from-amber-500 to-orange-600',
+      iconBg: 'bg-gradient-to-br from-amber-100 to-orange-100',
+      iconColor: 'text-amber-600',
+      cardBg: 'bg-gradient-to-br from-amber-50/50 to-orange-50/50',
+      borderColor: 'border-amber-200/60',
+      shadowColor: 'shadow-amber-100',
     },
     {
       title: 'Completed Orders',
       value: stats.completedOrders,
       icon: ShoppingCart,
       description: 'Orders completed',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
+      gradient: 'from-green-500 to-emerald-600',
+      iconBg: 'bg-gradient-to-br from-green-100 to-emerald-100',
+      iconColor: 'text-green-600',
+      cardBg: 'bg-gradient-to-br from-green-50/50 to-emerald-50/50',
+      borderColor: 'border-green-200/60',
+      shadowColor: 'shadow-green-100',
     },
     {
       title: 'Unpaid Invoices',
       value: stats.unpaidInvoices,
       icon: FileText,
       description: 'Awaiting payment',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
+      gradient: 'from-red-500 to-rose-600',
+      iconBg: 'bg-gradient-to-br from-red-100 to-rose-100',
+      iconColor: 'text-red-600',
+      cardBg: 'bg-gradient-to-br from-red-50/50 to-rose-50/50',
+      borderColor: 'border-red-200/60',
+      shadowColor: 'shadow-red-100',
     },
     {
       title: 'Total Revenue',
       value: `$${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
       description: 'From paid invoices',
-      color: 'text-emerald-700',
-      bgColor: 'bg-emerald-100',
-      borderColor: 'border-emerald-300',
+      gradient: 'from-emerald-600 to-teal-700',
+      iconBg: 'bg-gradient-to-br from-emerald-100 to-teal-100',
+      iconColor: 'text-emerald-700',
+      cardBg: 'bg-gradient-to-br from-emerald-50/50 to-teal-50/50',
+      borderColor: 'border-emerald-200/60',
+      shadowColor: 'shadow-emerald-100',
     },
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-6 rounded-xl border border-emerald-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                Welcome back, {session?.user?.name || 'User'}! 👋
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Here's what's happening with your business today.
-              </p>
-            </div>
-            {isDemoMode && (
-              <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">
-                Demo Mode
+      <div className="space-y-8">
+        {/* Welcome Section */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 rounded-2xl p-8 text-white shadow-2xl">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    Welcome back, {session?.user?.name || 'User'}! 👋
+                  </h1>
+                </div>
+                <p className="text-emerald-100 text-lg">
+                  Here's what's happening with your business today.
+                </p>
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
+                    <Target className="h-4 w-4" />
+                    <span className="text-sm font-medium">Growing Business</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
+                    <Zap className="h-4 w-4" />
+                    <span className="text-sm font-medium">Active Today</span>
+                  </div>
+                </div>
               </div>
-            )}
+              {isDemoMode && (
+                <div className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium border border-white/30">
+                  Demo Mode
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Stats Cards */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {statCards.map((stat) => (
-              <Card key={stat.title} className={`${stat.bgColor} ${stat.borderColor} border-2 hover:shadow-lg transition-all duration-200`}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {statCards.map((stat, index) => (
+              <Card 
+                key={stat.title} 
+                className={`group relative overflow-hidden ${stat.cardBg} ${stat.borderColor} border backdrop-blur-sm hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">
                     {stat.title}
                   </CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  <div className={`p-3 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
+                    <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
-                  <p className="text-sm text-gray-600 mt-1">
+                <CardContent className="space-y-2">
+                  <div className={`text-3xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+                    {stat.value}
+                  </div>
+                  <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors">
                     {stat.description}
                   </p>
+                  <div className={`h-1 w-full bg-gradient-to-r ${stat.gradient} rounded-full opacity-30 group-hover:opacity-60 transition-opacity duration-300`}></div>
                 </CardContent>
               </Card>
             ))}
@@ -228,47 +277,73 @@ export default function DashboardPage() {
         )}
 
         {/* Current Plan & Upgrade Section */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+        <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200/60 shadow-lg">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+          <CardHeader className="relative z-10">
+            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+                <TrendingUp className="h-6 w-6 text-white" />
+              </div>
               Your Plan & Upgrade Options
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-gray-600 text-lg">
               Manage your subscription and unlock more features
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="p-4 bg-white rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-gray-900 mb-2">Current Plan: Free</h3>
-                <p className="text-sm text-gray-600 mb-3">
+          <CardContent className="relative z-10">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="group p-6 bg-white/70 backdrop-blur-sm rounded-xl border border-blue-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-lg">Current Plan: Free</h3>
+                </div>
+                <p className="text-gray-600 mb-4">
                   You're currently on the free plan with basic features.
                 </p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Customers:</span>
-                    <span className="font-medium">{stats.totalCustomers}/50</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">Customers:</span>
+                    <span className="font-bold text-blue-600">{stats.totalCustomers}/50</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Invoices this month:</span>
-                    <span className="font-medium">0/20</span>
+                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">Invoices this month:</span>
+                    <span className="font-bold text-blue-600">0/20</span>
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-white rounded-lg border border-green-200">
-                <h3 className="font-semibold text-gray-900 mb-2">Upgrade Benefits</h3>
-                <ul className="text-sm text-gray-600 space-y-1 mb-3">
-                  <li>• Unlimited customers & invoices</li>
-                  <li>• Advanced product management</li>
-                  <li>• WhatsApp CRM integration</li>
-                  <li>• Priority support</li>
+              <div className="group p-6 bg-white/70 backdrop-blur-sm rounded-xl border border-emerald-200/50 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-lg">Upgrade Benefits</h3>
+                </div>
+                <ul className="text-gray-600 space-y-2 mb-6">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    Unlimited customers & invoices
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    Advanced product management
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    WhatsApp CRM integration
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                    Priority support
+                  </li>
                 </ul>
                 <Button 
                   onClick={() => router.push('/pricing')}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                 >
-                  View Plans & Upgrade
+                  <span>View Plans & Upgrade</span>
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
             </div>
@@ -276,53 +351,78 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="bg-gradient-to-br from-white to-emerald-50 border-emerald-200">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
-            <CardDescription className="text-gray-600">
+        <Card className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/30 to-green-50/50 border-emerald-200/60 shadow-lg">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+          <CardHeader className="relative z-10">
+            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              Quick Actions
+            </CardTitle>
+            <CardDescription className="text-gray-600 text-lg">
               Get started with these common tasks
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="relative z-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <button
               onClick={() => router.push('/customers/new')}
-              className="flex flex-col items-center p-6 border-2 border-emerald-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:shadow-md group"
+              className="group flex flex-col items-center p-6 bg-white/70 backdrop-blur-sm border border-emerald-200/50 rounded-2xl hover:bg-white hover:border-emerald-300 hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              <div className="p-3 bg-emerald-100 rounded-full group-hover:bg-emerald-200 transition-colors">
+              <div className="relative p-4 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
                 <Users className="h-8 w-8 text-emerald-600" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center">
+                  <Plus className="h-3 w-3 text-white" />
+                </div>
               </div>
-              <span className="font-semibold text-gray-900 mt-3">Add Customer</span>
+              <span className="font-bold text-gray-900 mt-4 text-lg">Add Customer</span>
               <span className="text-sm text-gray-500 mt-1">New customer</span>
+              <div className="w-full h-1 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full mt-3 opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
             </button>
+            
             <button
               onClick={() => router.push('/orders/new')}
-              className="flex flex-col items-center p-6 border-2 border-green-200 rounded-xl hover:bg-green-50 hover:border-green-300 transition-all duration-200 hover:shadow-md group"
+              className="group flex flex-col items-center p-6 bg-white/70 backdrop-blur-sm border border-green-200/50 rounded-2xl hover:bg-white hover:border-green-300 hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              <div className="p-3 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
+              <div className="relative p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
                 <ShoppingCart className="h-8 w-8 text-green-600" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <Plus className="h-3 w-3 text-white" />
+                </div>
               </div>
-              <span className="font-semibold text-gray-900 mt-3">Create Order</span>
+              <span className="font-bold text-gray-900 mt-4 text-lg">Create Order</span>
               <span className="text-sm text-gray-500 mt-1">New order</span>
+              <div className="w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mt-3 opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
             </button>
+            
             <button
               onClick={() => router.push('/invoices/new')}
-              className="flex flex-col items-center p-6 border-2 border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:shadow-md group"
+              className="group flex flex-col items-center p-6 bg-white/70 backdrop-blur-sm border border-blue-200/50 rounded-2xl hover:bg-white hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              <div className="p-3 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+              <div className="relative p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
                 <FileText className="h-8 w-8 text-blue-600" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                  <Plus className="h-3 w-3 text-white" />
+                </div>
               </div>
-              <span className="font-semibold text-gray-900 mt-3">Generate Invoice</span>
+              <span className="font-bold text-gray-900 mt-4 text-lg">Generate Invoice</span>
               <span className="text-sm text-gray-500 mt-1">New invoice</span>
+              <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mt-3 opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
             </button>
+            
             <button
               onClick={() => router.push('/settings')}
-              className="flex flex-col items-center p-6 border-2 border-purple-200 rounded-xl hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 hover:shadow-md group"
+              className="group flex flex-col items-center p-6 bg-white/70 backdrop-blur-sm border border-purple-200/50 rounded-2xl hover:bg-white hover:border-purple-300 hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              <div className="p-3 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
-                <TrendingUp className="h-8 w-8 text-purple-600" />
+              <div className="relative p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <BarChart3 className="h-8 w-8 text-purple-600" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                  <ArrowRight className="h-3 w-3 text-white" />
+                </div>
               </div>
-              <span className="font-semibold text-gray-900 mt-3">View Analytics</span>
+              <span className="font-bold text-gray-900 mt-4 text-lg">View Analytics</span>
               <span className="text-sm text-gray-500 mt-1">Business insights</span>
+              <div className="w-full h-1 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full mt-3 opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
             </button>
           </CardContent>
         </Card>
@@ -330,4 +430,5 @@ export default function DashboardPage() {
     </DashboardLayout>
   );
 }
+ 
  
