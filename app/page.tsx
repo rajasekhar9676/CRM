@@ -36,9 +36,23 @@ export default function HomePage() {
 
   useEffect(() => {
     if (session && status === 'authenticated') {
-      router.push('/dashboard');
+      // Check if there's a callback URL from the query params
+      const callbackUrl = searchParams.get('callbackUrl');
+      
+      if (callbackUrl) {
+        // If callback URL is external (full URL), extract the path
+        try {
+          const url = new URL(callbackUrl);
+          router.push(url.pathname + url.search);
+        } catch {
+          // If it's already a path, use it directly
+          router.push(callbackUrl);
+        }
+      } else {
+        router.push('/dashboard');
+      }
     }
-  }, [session, status, router]);
+  }, [session, status, router, searchParams]);
 
   // Handle auth modal from URL parameters (when redirected from middleware or NextAuth)
   useEffect(() => {

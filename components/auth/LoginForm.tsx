@@ -45,7 +45,16 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
       if (result?.ok) {
         // Get callback URL from search params or default to dashboard
-        const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+        let callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+        
+        // If callback URL is a full URL, extract just the path
+        try {
+          const url = new URL(callbackUrl)
+          callbackUrl = url.pathname + url.search
+        } catch {
+          // If it's already a path, use it directly
+        }
+        
         router.push(callbackUrl)
       } else {
         setError('Invalid email or password')
@@ -60,7 +69,16 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+      let callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+      
+      // If callback URL is a full URL, extract just the path
+      try {
+        const url = new URL(callbackUrl)
+        callbackUrl = url.pathname + url.search
+      } catch {
+        // If it's already a path, use it directly
+      }
+      
       await signIn('google', { callbackUrl })
     } catch (error) {
       setError('Google sign-in failed. Please try again.')
