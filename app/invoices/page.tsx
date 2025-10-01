@@ -327,18 +327,18 @@ export default function InvoicesPage() {
             {invoices.map((invoice) => (
               <Card key={invoice.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1">
                       <CardTitle className="text-lg">Invoice #{invoice.id.slice(-8)}</CardTitle>
                       <CardDescription>
                         Created: {new Date(invoice.created_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                       <Badge className={getStatusColor(invoice.status)}>
                         {invoice.status}
                       </Badge>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <div className="text-lg font-semibold">
                           ${invoice.amount.toFixed(2)}
                         </div>
@@ -358,42 +358,45 @@ export default function InvoicesPage() {
                       </div>
                     )}
 
-                    <div className="flex justify-end space-x-2 pt-2 border-t">
+                    <div className="flex flex-wrap justify-end gap-2 pt-2 border-t">
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="text-xs sm:text-sm"
                         onClick={() => handleViewInvoice(invoice)}
                       >
-                        <Eye className="mr-2 h-4 w-4" />
+                        <Eye className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         View
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="text-xs sm:text-sm"
                         onClick={() => generateWhatsAppLink(invoice)}
                       >
-                        <MessageCircle className="mr-2 h-4 w-4" />
+                        <MessageCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         WhatsApp
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="text-xs sm:text-sm"
                         onClick={() => generatePDF(invoice)}
                       >
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         Download
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <Edit className="mr-2 h-4 w-4" />
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                        <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         Edit
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
                         onClick={() => handleDelete(invoice.id)}
-                        className="text-red-600 hover:text-red-700"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         Delete
                       </Button>
                     </div>

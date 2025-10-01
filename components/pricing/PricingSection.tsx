@@ -132,7 +132,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
   };
 
   return (
-    <section className="py-24 bg-gradient-to-br from-gray-50 to-emerald-50">
+    <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-emerald-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {showTitle && (
           <div className="text-center mb-20">
@@ -217,7 +217,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                       onClick={() => handleSubscribe(planType)}
                       disabled={loading === planType}
                       variant={getButtonVariant(planType)}
-                      className={`w-full h-12 text-lg font-semibold ${
+                      className={`w-full h-10 sm:h-12 text-sm sm:text-lg font-semibold ${
                         isPopular 
                           ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : isBusiness

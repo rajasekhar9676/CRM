@@ -313,44 +313,44 @@ export default function HomePage() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-emerald-100 hover:border-emerald-200 bg-gradient-to-br from-white to-emerald-50">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-8 w-8 text-white" />
+              <CardContent className="p-6 lg:p-8 text-center">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Customer Manager</h3>
-                <p className="text-gray-600 leading-relaxed">Save customer contacts in one place with tags, notes, and Instagram handles for better organization.</p>
+                <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Customer Manager</h3>
+                <p className="text-sm lg:text-base text-gray-600 leading-relaxed">Save customer contacts in one place with tags, notes, and Instagram handles for better organization.</p>
               </CardContent>
             </Card>
 
             <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-blue-100 hover:border-blue-200 bg-gradient-to-br from-white to-blue-50">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <ShoppingCart className="h-8 w-8 text-white" />
+              <CardContent className="p-6 lg:p-8 text-center">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <ShoppingCart className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Order Tracking</h3>
-                <p className="text-gray-600 leading-relaxed">Track orders from creation to completion with real-time status updates and due date management.</p>
+                <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Order Tracking</h3>
+                <p className="text-sm lg:text-base text-gray-600 leading-relaxed">Track orders from creation to completion with real-time status updates and due date management.</p>
               </CardContent>
             </Card>
 
             <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-purple-100 hover:border-purple-200 bg-gradient-to-br from-white to-purple-50">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <FileText className="h-8 w-8 text-white" />
+              <CardContent className="p-6 lg:p-8 text-center">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <FileText className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Invoice Generator</h3>
-                <p className="text-gray-600 leading-relaxed">Create professional invoices with your business branding and send them via WhatsApp instantly.</p>
+                <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Invoice Generator</h3>
+                <p className="text-sm lg:text-base text-gray-600 leading-relaxed">Create professional invoices with your business branding and send them via WhatsApp instantly.</p>
               </CardContent>
             </Card>
 
             <Card className="group hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-200 bg-gradient-to-br from-white to-orange-50">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <MessageCircle className="h-8 w-8 text-white" />
+              <CardContent className="p-6 lg:p-8 text-center">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <MessageCircle className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">WhatsApp CRM</h3>
-                <p className="text-gray-600 leading-relaxed">Send invoices, messages, and updates directly through WhatsApp for instant communication.</p>
+                <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">WhatsApp CRM</h3>
+                <p className="text-sm lg:text-base text-gray-600 leading-relaxed">Send invoices, messages, and updates directly through WhatsApp for instant communication.</p>
               </CardContent>
             </Card>
           </div>
@@ -376,29 +376,29 @@ export default function HomePage() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <span className="text-3xl font-bold text-white">1</span>
+              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 lg:mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-2xl lg:text-3xl font-bold text-white">1</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Add Customer</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">Start by adding your customer details, contact information, and preferences to build your customer base.</p>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6">Add Customer</h3>
+              <p className="text-base lg:text-lg text-gray-600 leading-relaxed">Start by adding your customer details, contact information, and preferences to build your customer base.</p>
             </div>
 
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <span className="text-3xl font-bold text-white">2</span>
+              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 lg:mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-2xl lg:text-3xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Create Order</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">Create orders for your customers and track their progress from start to finish with real-time updates.</p>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6">Create Order</h3>
+              <p className="text-base lg:text-lg text-gray-600 leading-relaxed">Create orders for your customers and track their progress from start to finish with real-time updates.</p>
             </div>
 
             <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <span className="text-3xl font-bold text-white">3</span>
+              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 lg:mb-8 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <span className="text-2xl lg:text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Send Invoice on WhatsApp</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">Generate professional invoices and send them directly to customers via WhatsApp for instant delivery.</p>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6">Send Invoice on WhatsApp</h3>
+              <p className="text-base lg:text-lg text-gray-600 leading-relaxed">Generate professional invoices and send them directly to customers via WhatsApp for instant delivery.</p>
             </div>
           </div>
         </div>
@@ -432,13 +432,13 @@ export default function HomePage() {
             Join thousands of businesses already using BizMitra to streamline their operations and grow their revenue.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-white text-emerald-600 hover:bg-gray-100 px-10 py-4 text-xl font-semibold shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300"
+              className="bg-white text-emerald-600 hover:bg-gray-100 px-6 sm:px-10 py-3 sm:py-4 text-lg sm:text-xl font-semibold shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto"
             >
-              <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -462,16 +462,16 @@ export default function HomePage() {
               onClick={handleDemoMode}
               variant="outline"
               size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 px-10 py-4 text-xl font-semibold transition-all duration-300"
+              className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 px-6 sm:px-10 py-3 sm:py-4 text-lg sm:text-xl font-semibold transition-all duration-300 w-full sm:w-auto"
             >
               {isDemoLoading ? (
                 <>
-                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 animate-spin" />
                   Loading Demo...
                 </>
               ) : (
                 <>
-                  <Smartphone className="h-5 w-5 mr-3" />
+                  <Smartphone className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
                   Try Demo Mode
                 </>
               )}
