@@ -7,7 +7,8 @@ export default withAuth(
     if (req.nextUrl.pathname.startsWith('/admin')) {
       if (!req.nextauth.token) {
         const signInUrl = new URL('/auth/admin-signin', req.url)
-        signInUrl.searchParams.set('callbackUrl', req.url)
+        // Use pathname + search instead of full URL
+        signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
         return NextResponse.redirect(signInUrl)
       }
     }
@@ -21,7 +22,8 @@ export default withAuth(
       if (!req.nextauth.token) {
         const homeUrl = new URL('/', req.url)
         homeUrl.searchParams.set('auth', 'login')
-        homeUrl.searchParams.set('callbackUrl', req.url)
+        // Use pathname + search instead of full URL
+        homeUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
         return NextResponse.redirect(homeUrl)
       }
     }

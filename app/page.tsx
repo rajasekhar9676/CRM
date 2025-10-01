@@ -37,20 +37,8 @@ export default function HomePage() {
   useEffect(() => {
     if (session && status === 'authenticated') {
       // Check if there's a callback URL from the query params
-      const callbackUrl = searchParams.get('callbackUrl');
-      
-      if (callbackUrl) {
-        // If callback URL is external (full URL), extract the path
-        try {
-          const url = new URL(callbackUrl);
-          router.push(url.pathname + url.search);
-        } catch {
-          // If it's already a path, use it directly
-          router.push(callbackUrl);
-        }
-      } else {
-        router.push('/dashboard');
-      }
+      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+      router.push(callbackUrl);
     }
   }, [session, status, router, searchParams]);
 
