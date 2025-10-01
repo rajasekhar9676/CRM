@@ -47,8 +47,20 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         try {
           // Check sessionStorage first, then search params, then default to dashboard
           const storedRedirect = typeof window !== 'undefined' ? sessionStorage.getItem('redirectAfterLogin') : null
-          const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-          const redirectTo = storedRedirect || callbackUrl
+          const callbackUrl = searchParams.get('callbackUrl')
+          
+          // Parse callback URL properly - extract path from full URL if needed
+          let redirectTo = storedRedirect || '/dashboard'
+          if (callbackUrl) {
+            try {
+              // If it's a full URL, extract just the path
+              const url = new URL(callbackUrl)
+              redirectTo = url.pathname + url.search
+            } catch {
+              // If it's already a path, use it directly
+              redirectTo = callbackUrl
+            }
+          }
           
           // Clear the stored redirect
           if (storedRedirect && typeof window !== 'undefined') {

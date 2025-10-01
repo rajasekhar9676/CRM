@@ -40,7 +40,19 @@ export default function HomePage() {
         // Check sessionStorage first, then query params, then default to dashboard
         const storedRedirect = typeof window !== 'undefined' ? sessionStorage.getItem('redirectAfterLogin') : null;
         const callbackUrl = searchParams.get('callbackUrl');
-        const redirectTo = storedRedirect || callbackUrl || '/dashboard';
+        
+        // Parse callback URL properly - extract path from full URL if needed
+        let redirectTo = storedRedirect || '/dashboard';
+        if (callbackUrl) {
+          try {
+            // If it's a full URL, extract just the path
+            const url = new URL(callbackUrl);
+            redirectTo = url.pathname + url.search;
+          } catch {
+            // If it's already a path, use it directly
+            redirectTo = callbackUrl;
+          }
+        }
         
         // Clear the stored redirect
         if (storedRedirect && typeof window !== 'undefined') {
