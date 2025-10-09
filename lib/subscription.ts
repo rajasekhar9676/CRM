@@ -22,7 +22,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
   },
   starter: {
     name: 'Starter',
-    price: 250,
+    price: 249,
     currency: 'INR',
     description: 'Perfect for small businesses',
     features: [
