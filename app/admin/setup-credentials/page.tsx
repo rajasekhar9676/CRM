@@ -21,7 +21,7 @@ export default function SetupCredentialsPage() {
     name: 'Admin User'
   };
 
-  const sqlScript = `-- Admin Setup for MiniCRM
+  const sqlScript = `-- Admin Setup for BizMitra
 -- Run this in your Supabase SQL Editor
 
 -- Step 1: Add role column to users table
@@ -77,7 +77,7 @@ WHERE email = '${adminCredentials.email}';`;
             Admin Credentials Setup
           </CardTitle>
           <CardDescription>
-            Set up admin credentials for your MiniCRM application
+            Set up admin credentials for your BizMitra application
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

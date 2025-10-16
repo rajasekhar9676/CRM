@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 mb-4">
-                At MiniCRM, we are committed to protecting your privacy and ensuring the security of your personal 
+                At BizMitra, we are committed to protecting your privacy and ensuring the security of your personal 
                 information. This Privacy Policy explains how we collect, use, disclose, and safeguard your 
                 information when you use our customer relationship management software service.
               </p>

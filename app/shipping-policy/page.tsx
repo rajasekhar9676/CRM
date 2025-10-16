@@ -24,12 +24,12 @@ export default function ShippingPolicyPage() {
                 Digital Service Delivery
               </CardTitle>
               <CardDescription className="text-blue-700">
-                MiniCRM is a cloud-based software service - no physical shipping required
+                BizMitra is a cloud-based software service - no physical shipping required
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-blue-800">
-                Since MiniCRM is a digital software service, there is no physical shipping involved. 
+                Since BizMitra is a digital software service, there is no physical shipping involved. 
                 Your account and all features are available immediately upon subscription activation.
               </p>
             </CardContent>
@@ -43,7 +43,7 @@ export default function ShippingPolicyPage() {
                 Service Delivery Timeline
               </CardTitle>
               <CardDescription>
-                How quickly you get access to your MiniCRM account
+                How quickly you get access to your BizMitra account
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -79,7 +79,7 @@ export default function ShippingPolicyPage() {
                   <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Account Creation</h3>
-                    <p className="text-sm text-gray-600">Your MiniCRM account is created instantly</p>
+                    <p className="text-sm text-gray-600">Your BizMitra account is created instantly</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

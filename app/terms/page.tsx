@@ -26,8 +26,8 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 mb-4">
-                Welcome to MiniCRM ("we," "our," or "us"). These Terms and Conditions ("Terms") govern your use of our 
-                customer relationship management software service ("Service") operated by MiniCRM.
+                Welcome to BizMitra ("we," "our," or "us"). These Terms and Conditions ("Terms") govern your use of our 
+                customer relationship management software service ("Service") operated by BizMitra.
               </p>
               <p className="text-gray-700">
                 By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any part 
@@ -43,7 +43,7 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                By creating an account, accessing, or using MiniCRM, you acknowledge that you have read, understood, 
+                By creating an account, accessing, or using BizMitra, you acknowledge that you have read, understood, 
                 and agree to be bound by these Terms and our Privacy Policy.
               </p>
               <p className="text-gray-700">
@@ -60,7 +60,7 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                MiniCRM is a cloud-based customer relationship management software that provides tools for:
+                BizMitra is a cloud-based customer relationship management software that provides tools for:
               </p>
               <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
                 <li>Customer management and contact organization</li>
@@ -215,7 +215,7 @@ export default function TermsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                To the maximum extent permitted by law, MiniCRM shall not be liable for any indirect, incidental, 
+                To the maximum extent permitted by law, BizMitra shall not be liable for any indirect, incidental, 
                 special, consequential, or punitive damages, including but not limited to loss of profits, data, 
                 or business opportunities.
               </p>

@@ -101,7 +101,7 @@ export default function VerifySetupPage() {
   };
 
   const copySqlScript = () => {
-    const sqlScript = `-- Admin Setup for MiniCRM
+    const sqlScript = `-- Admin Setup for BizMitra
 -- Run this in your Supabase SQL Editor
 
 -- Step 1: Add role column to users table

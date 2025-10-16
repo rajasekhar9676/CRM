@@ -12,7 +12,18 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">MiniCRM</h3>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/images/bizmitra-logo-icon.svg" 
+                alt="BizMitra Logo" 
+                className="h-10 w-10"
+                style={{ 
+                  imageRendering: 'crisp-edges',
+                  filter: 'contrast(1.1)',
+                  WebkitFilter: 'contrast(1.1)'
+                }}
+              />
+            </div>
             <p className="text-gray-300 text-sm">
               The simple and powerful CRM solution for small businesses. 
               Manage customers, orders, and invoices with ease.
@@ -125,7 +136,7 @@ export function Footer() {
         <div className="mt-8 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © {currentYear} MiniCRM. All rights reserved.
+              © {currentYear} BizMitra. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">

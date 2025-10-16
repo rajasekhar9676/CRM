@@ -23,8 +23,22 @@ export function Header() {
   return (
     <header className="bg-background border-b px-6 py-4">
       <div className="flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center space-x-4">
+          <img 
+            src="/images/bizmitra-logo-icon.svg" 
+            alt="BizMitra Logo" 
+            className="h-10 w-10"
+            style={{ 
+              imageRendering: 'crisp-edges',
+              filter: 'contrast(1.1)',
+              WebkitFilter: 'contrast(1.1)'
+            }}
+          />
+        </div>
+        
         {/* Search */}
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md mx-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input

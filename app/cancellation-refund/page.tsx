@@ -29,7 +29,7 @@ export default function CancellationRefundPage() {
             </CardHeader>
             <CardContent>
               <p className="text-green-800">
-                We're confident you'll love MiniCRM. If you're not completely satisfied within the first 30 days 
+                We're confident you'll love BizMitra. If you're not completely satisfied within the first 30 days 
                 of your subscription, we'll provide a full refund, no questions asked.
               </p>
             </CardContent>
@@ -53,7 +53,7 @@ export default function CancellationRefundPage() {
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
                     <div>
-                      <p className="text-gray-700">Log in to your MiniCRM account</p>
+                      <p className="text-gray-700">Log in to your BizMitra account</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

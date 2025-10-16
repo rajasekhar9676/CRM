@@ -53,7 +53,7 @@ export default function PricingPage() {
                 Choose Your Plan
               </h1>
               <p className="text-muted-foreground mt-2">
-                Upgrade your MiniCRM experience with our flexible pricing plans
+                Upgrade your BizMitra experience with our flexible pricing plans
               </p>
             </div>
           </div>

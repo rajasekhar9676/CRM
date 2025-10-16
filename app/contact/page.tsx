@@ -237,7 +237,7 @@ export default function ContactPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="border-b pb-4">
-                <h3 className="font-semibold text-gray-900 mb-2">How do I get started with MiniCRM?</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">How do I get started with BizMitra?</h3>
                 <p className="text-gray-600">Simply sign up for a free account and start adding your customers. No credit card required for the free plan.</p>
               </div>
               <div className="border-b pb-4">

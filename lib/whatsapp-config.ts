@@ -6,7 +6,7 @@ export const WHATSAPP_CONFIG = {
   phoneNumber: "1234567890",
   
   // Default message that will be pre-filled
-  defaultMessage: "Hello! I need help with MiniCRM.",
+  defaultMessage: "Hello! I need help with BizMitra.",
   
   // Whether to show the floating button
   enabled: true,

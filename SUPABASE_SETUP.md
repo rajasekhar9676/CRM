@@ -1,4 +1,4 @@
-# Supabase + NextAuth Setup Guide for MiniCRM
+# Supabase + NextAuth Setup Guide for BizMitra
 
 ## Step 1: Create a Supabase Project
 

@@ -1,0 +1,21 @@
+<svg width="240" height="80" viewBox="0 0 240 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo Circle -->
+  <circle cx="40" cy="40" r="35" fill="#10b981" stroke="#059669" stroke-width="3"/>
+  
+  <!-- Handshake Icon -->
+  <g fill="white">
+    <!-- Left hand (improved) -->
+    <ellipse cx="25" cy="38" rx="5" ry="8" transform="rotate(-25 25 38)"/>
+    <!-- Right hand (improved) -->
+    <ellipse cx="55" cy="38" rx="5" ry="8" transform="rotate(25 55 38)"/>
+    <!-- Handshake connection -->
+    <path d="M30 38 Q40 32 50 38" stroke="white" stroke-width="3" fill="none"/>
+  </g>
+  
+  <!-- Upward Arrow (behind handshake) -->
+  <path d="M32 15 L40 8 L48 15 L44 15 L44 22 L36 22 L36 15 Z" fill="white" opacity="0.95"/>
+  
+  <!-- BizMitra Text -->
+  <text x="90" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#10b981">BizMitra</text>
+  <text x="90" y="55" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Business Partner</text>
+</svg>

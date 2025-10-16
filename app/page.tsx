@@ -151,12 +151,16 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                BizMitra
-              </span>
+              <img 
+                src="/images/bizmitra-logo.png" 
+                alt="BizMitra Logo" 
+                className="h-20 w-auto"
+                style={{ 
+                  imageRendering: 'crisp-edges',
+                  filter: 'contrast(1.1)',
+                  WebkitFilter: 'contrast(1.1)'
+                }}
+              />
             </Link>
 
             {/* Desktop Navigation */}
@@ -501,7 +505,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">BizMitra</h3>
+              <div className="flex items-center space-x-3 mb-4">
+                <img 
+                  src="/images/bizmitra-logo-icon.svg" 
+                  alt="BizMitra Logo" 
+                  className="h-8 w-8"
+                />
+              </div>
               <p className="text-gray-400">Simple CRM for managing customers, orders, and invoices.</p>
             </div>
             <div>

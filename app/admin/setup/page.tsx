@@ -117,7 +117,7 @@ export default function AdminSetupPage() {
     );
   }
 
-  const sqlScript = `-- Admin Setup for MiniCRM
+  const sqlScript = `-- Admin Setup for BizMitra
 -- Run this in your Supabase SQL Editor
 
 -- Step 1: Add role column to users table
@@ -145,7 +145,7 @@ WHERE id = '${(session?.user as any)?.id}';`;
             Admin Setup
           </CardTitle>
           <CardDescription>
-            Set up admin access for your MiniCRM application
+            Set up admin access for your BizMitra application
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

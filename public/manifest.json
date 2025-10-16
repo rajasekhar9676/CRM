@@ -1,6 +1,6 @@
 {
   "name": "MiniCRM - Customer Management",
-  "short_name": "MiniCRM",
+  "short_name": "BizMitra",
   "description": "A simple CRM for managing customers, orders, and invoices",
   "start_url": "/",
   "display": "standalone",

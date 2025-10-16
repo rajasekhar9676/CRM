@@ -1,4 +1,4 @@
-# MiniCRM - Customer Management System
+# BizMitra - Customer Management System
 
 A complete Next.js 14 + TypeScript + Tailwind + Firebase PWA for managing customers, orders, and invoices.
 

@@ -102,7 +102,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold text-gray-900">Welcome Back</CardTitle>
         <CardDescription>
-          Sign in to your MiniCRM account
+          Sign in to your BizMitra account
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -134,7 +134,7 @@ export default function QuickSetupPage() {
     );
   }
 
-  const sqlScript = `-- Quick Admin Setup for MiniCRM
+  const sqlScript = `-- Quick Admin Setup for BizMitra
 -- Run this in your Supabase SQL Editor
 
 -- Add role column to users table
@@ -162,7 +162,7 @@ ORDER BY created_at ASC;`;
             Quick Admin Setup
           </CardTitle>
           <CardDescription>
-            Set up admin access for your MiniCRM application
+            Set up admin access for your BizMitra application
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
