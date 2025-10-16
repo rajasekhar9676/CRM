@@ -39,6 +39,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
       hasWhatsAppCRM: false,
       hasPrioritySupport: false,
     },
+    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_STARTER_PLAN_ID,
     cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_STARTER_PLAN_ID,
   },
   pro: {
@@ -61,6 +62,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
       hasWhatsAppCRM: true,
       hasPrioritySupport: false,
     },
+    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PRO_PLAN_ID,
     cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_PRO_PLAN_ID,
   },
   business: {
@@ -83,6 +85,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, PlanFeatures> = {
       hasWhatsAppCRM: true,
       hasPrioritySupport: true,
     },
+    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_BUSINESS_PLAN_ID,
     cashfreePlanId: process.env.NEXT_PUBLIC_CASHFREE_BUSINESS_PLAN_ID,
   },
 };

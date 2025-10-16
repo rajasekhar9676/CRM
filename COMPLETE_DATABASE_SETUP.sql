@@ -21,7 +21,7 @@ WHERE id = (
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  plan TEXT NOT NULL CHECK (plan IN ('free', 'pro', 'business')),
+  plan TEXT NOT NULL CHECK (plan IN ('free', 'starter', 'pro', 'business')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'past_due', 'unpaid')),
   current_period_start TIMESTAMP WITH TIME ZONE,
   current_period_end TIMESTAMP WITH TIME ZONE,

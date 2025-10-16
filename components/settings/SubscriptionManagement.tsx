@@ -14,26 +14,26 @@ export function SubscriptionManagement() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (planType: 'starter' | 'pro' | 'business' = 'pro') => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ plan: 'pro' }),
+        body: JSON.stringify({ plan: planType }),
       });
 
       const data = await response.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.shortUrl) {
+        window.location.href = data.shortUrl;
       } else {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.error || 'Failed to create subscription');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Error creating subscription:', error);
       toast({
         title: "Error",
         description: "Failed to start upgrade process. Please try again.",
@@ -45,16 +45,26 @@ export function SubscriptionManagement() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!subscription?.stripeSubscriptionId) return;
+    if (!subscription?.razorpaySubscriptionId && !subscription?.stripeSubscriptionId) return;
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/stripe/cancel-subscription', {
+      // Use Razorpay if razorpaySubscriptionId exists, otherwise fall back to Stripe
+      const endpoint = subscription?.razorpaySubscriptionId 
+        ? '/api/razorpay/cancel-subscription' 
+        : '/api/stripe/cancel-subscription';
+      
+      const subscriptionId = subscription?.razorpaySubscriptionId || subscription?.stripeSubscriptionId;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ subscriptionId: subscription.stripeSubscriptionId }),
+        body: JSON.stringify({ 
+          subscriptionId: subscriptionId,
+          cancelAtCycleEnd: true // Cancel at the end of billing period
+        }),
       });
 
       if (response.ok) {
@@ -129,7 +139,7 @@ export function SubscriptionManagement() {
             </p>
           </div>
           {plan === 'free' && (
-            <Button onClick={handleUpgrade} disabled={isLoading}>
+            <Button onClick={() => handleUpgrade('starter')} disabled={isLoading}>
               {isLoading ? 'Processing...' : 'Upgrade Plan'}
             </Button>
           )}

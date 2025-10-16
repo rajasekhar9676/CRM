@@ -17,7 +17,7 @@ export const cashfreeConfig = {
 export const CASHFREE_PLANS = {
   starter: {
     planId: process.env.NEXT_PUBLIC_CASHFREE_STARTER_PLAN_ID!,
-    price: 250,
+    price: 249,
     name: 'Starter Plan',
     recurringAmount: 25000, // ₹250 in paise
     maxAmount: 25000, // Maximum amount per billing cycle

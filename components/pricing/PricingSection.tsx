@@ -40,7 +40,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     setLoading(plan);
 
     try {
-      const response = await fetch('/api/cashfree/create-subscription', {
+      const response = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,13 +50,13 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
 
       const data = await response.json();
 
-      if (data.authLink) {
-        // Redirect to Cashfree payment page
-        window.location.href = data.authLink;
+      if (data.shortUrl) {
+        // Redirect to Razorpay payment page
+        window.location.href = data.shortUrl;
       } else if (data.setupRequired) {
         toast({
           title: "Setup Required",
-          description: "Cashfree payment integration needs to be configured. Please contact support.",
+          description: "Razorpay payment integration needs to be configured. Please contact support.",
           variant: "destructive",
         });
       } else if (data.databaseError) {
@@ -65,10 +65,10 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
           description: "Please run the database setup script to create the subscriptions table.",
           variant: "destructive",
         });
-      } else if (data.cashfreeError) {
+      } else if (data.razorpayError) {
         toast({
           title: "Payment Error",
-          description: data.details || "Failed to create subscription with Cashfree. Please try again.",
+          description: data.details || "Failed to create subscription with Razorpay. Please try again.",
           variant: "destructive",
         });
       } else if (data.apiError) {

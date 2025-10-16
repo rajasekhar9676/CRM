@@ -131,7 +131,7 @@ export default function PricingPage() {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">What payment methods do you accept?</h3>
                 <p className="text-sm text-gray-600">
-                  We accept all major credit cards, debit cards, and UPI payments through Cashfree.
+                  We accept all major credit cards, debit cards, UPI, net banking, and wallets through Razorpay.
                 </p>
               </div>
               <div>

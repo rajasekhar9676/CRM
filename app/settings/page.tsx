@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Settings, User, Building2 } from 'lucide-react';
 import { BusinessProfileForm } from '@/components/settings/BusinessProfileForm';
-import { BusinessProfileDebug } from '@/components/settings/BusinessProfileDebug';
 import { SubscriptionManagement } from '@/components/settings/SubscriptionManagement';
 import { PricingSection } from '@/components/pricing/PricingSection';
 
@@ -44,9 +43,6 @@ export default function SettingsPage() {
             Manage your account and application settings
           </p>
         </div>
-
-        {/* Business Profile Debug Section */}
-        <BusinessProfileDebug />
 
         {/* Subscription Management Section */}
         <SubscriptionManagement />

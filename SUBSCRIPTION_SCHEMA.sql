@@ -5,8 +5,8 @@
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  plan TEXT NOT NULL CHECK (plan IN ('free', 'pro', 'business')),
-  status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'past_due', 'unpaid')),
+  plan TEXT NOT NULL CHECK (plan IN ('free', 'starter', 'pro', 'business')),
+  status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'past_due', 'unpaid', 'created', 'pending')),
   current_period_start TIMESTAMP WITH TIME ZONE NOT NULL,
   current_period_end TIMESTAMP WITH TIME ZONE NOT NULL,
   cancel_at_period_end BOOLEAN DEFAULT FALSE,

@@ -89,7 +89,7 @@ export type SubscriptionPlan = 'free' | 'starter' | 'pro' | 'business';
 
 export interface Subscription {
   plan: SubscriptionPlan;
-  status: 'active' | 'canceled' | 'past_due' | 'unpaid';
+  status: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'created' | 'pending';
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
@@ -97,6 +97,8 @@ export interface Subscription {
   stripeCustomerId?: string;
   cashfreeSubscriptionId?: string;
   cashfreeCustomerId?: string;
+  razorpaySubscriptionId?: string;
+  razorpayCustomerId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,5 +120,6 @@ export interface PlanFeatures {
   limits: PlanLimits;
   stripePriceId?: string;
   cashfreePlanId?: string;
+  razorpayPlanId?: string;
 }
 

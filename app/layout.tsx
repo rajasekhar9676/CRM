@@ -4,6 +4,9 @@ import './globals.css'
 import { AuthProvider } from '@/context/AuthProvider'
 import { SubscriptionProvider } from '@/context/SubscriptionProvider'
 import { Toaster } from '@/components/ui/toaster'
+import { WhatsAppFloat } from '@/components/ui/whatsapp-float'
+import { WHATSAPP_CONFIG } from '@/lib/whatsapp-config'
+import { Footer } from '@/components/layout/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -46,7 +49,12 @@ export default function RootLayout({
         <AuthProvider>
           <SubscriptionProvider>
             {children}
+            <Footer />
             <Toaster />
+            <WhatsAppFloat 
+              phoneNumber={WHATSAPP_CONFIG.phoneNumber} 
+              message={WHATSAPP_CONFIG.defaultMessage} 
+            />
           </SubscriptionProvider>
         </AuthProvider>
       </body>
