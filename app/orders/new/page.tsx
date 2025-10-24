@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,21 +11,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Search } from 'lucide-react';
 
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  product_id?: string;
 }
 
-import { Customer } from '@/types';
+import { Customer, Product } from '@/types';
 
 export default function NewOrderPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     customerId: '',
     dueDate: '',
@@ -46,8 +53,38 @@ export default function NewOrderPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchCustomers();
+      fetchProducts();
     }
   }, [status]);
+
+  useEffect(() => {
+    if (productSearch) {
+      const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(productSearch.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+      setShowProductDropdown(true);
+    } else {
+      setFilteredProducts([]);
+      setShowProductDropdown(false);
+    }
+  }, [productSearch, products]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProductDropdown(false);
+        setActiveItemIndex(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -68,6 +105,26 @@ export default function NewOrderPage() {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, sku, status')
+        .eq('user_id', (session?.user as any)?.id)
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        return;
+      }
+
+      setProducts(data as Product[] || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
@@ -79,6 +136,37 @@ export default function NewOrderPage() {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
+  };
+
+  const handleProductSelect = (product: Product, itemIndex: number) => {
+    const newItems = [...items];
+    newItems[itemIndex] = {
+      ...newItems[itemIndex],
+      name: product.name,
+      price: product.price,
+      product_id: product.id,
+    };
+    setItems(newItems);
+    setProductSearch('');
+    setShowProductDropdown(false);
+    setActiveItemIndex(null);
+  };
+
+  const handleProductSearch = (searchTerm: string, itemIndex: number) => {
+    setProductSearch(searchTerm);
+    setActiveItemIndex(itemIndex);
+    
+    if (searchTerm) {
+      const filtered = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+      setShowProductDropdown(true);
+    } else {
+      setFilteredProducts([]);
+      setShowProductDropdown(false);
+    }
   };
 
   const addItem = () => {
@@ -279,14 +367,46 @@ export default function NewOrderPage() {
             <CardContent className="space-y-4">
               {items.map((item, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
-                  <div className="space-y-2">
-                    <Label>Item Name *</Label>
-                    <Input
-                      value={item.name}
-                      onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                      placeholder="Product name"
-                      required
-                    />
+                  <div className="space-y-2 relative">
+                    <Label>Product *</Label>
+                    <div className="relative" ref={dropdownRef}>
+                      <Input
+                        value={productSearch}
+                        onChange={(e) => handleProductSearch(e.target.value, index)}
+                        onFocus={() => {
+                          setActiveItemIndex(index);
+                          if (productSearch) setShowProductDropdown(true);
+                        }}
+                        placeholder="Search products..."
+                        className="pr-8"
+                      />
+                      <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      
+                      {/* Product Dropdown */}
+                      {showProductDropdown && filteredProducts.length > 0 && activeItemIndex === index && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          {filteredProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                              onClick={() => handleProductSelect(product, index)}
+                            >
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-gray-500">
+                                ${product.price} {product.sku && `• SKU: ${product.sku}`}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Selected Product Display */}
+                    {item.name && (
+                      <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        Selected: <strong>{item.name}</strong> - ${item.price}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Quantity *</Label>

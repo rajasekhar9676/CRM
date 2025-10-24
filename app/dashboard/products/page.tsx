@@ -19,20 +19,27 @@ import {
   DollarSign,
   Tag,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  Upload,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
+import { ImportModal } from '@/components/ui/ImportModal';
+import { exportToExcel } from '@/lib/excel-utils';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function ProductsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
@@ -118,6 +125,110 @@ export default function ProductsPage() {
 
   const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
 
+  const handleExportProducts = () => {
+    const exportData = products.map(product => ({
+      name: product.name,
+      description: product.description || '',
+      category: product.category || '',
+      price: product.price,
+      sku: product.sku || '',
+      status: product.status,
+    }));
+    
+    exportToExcel(exportData, 'products_export', 'Products');
+    toast({
+      title: "Export successful",
+      description: "Products data exported to Excel file.",
+    });
+  };
+
+  const handleImportProducts = async (importData: any[]) => {
+    try {
+      const userId = (session?.user as any)?.id;
+      let successCount = 0;
+      let skipCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      // Process each product individually to handle duplicates
+      for (const product of importData) {
+        try {
+          // Check if product with this SKU already exists (only if SKU is provided)
+          if (product.sku && product.sku.trim() !== '') {
+            const { data: existingProduct } = await supabase
+              .from('products')
+              .select('id')
+              .eq('sku', product.sku.trim())
+              .eq('user_id', userId)
+              .single();
+
+            if (existingProduct) {
+              // Update existing product
+              const { error: updateError } = await supabase
+                .from('products')
+                .update({
+                  name: product.name,
+                  description: product.description,
+                  category: product.category,
+                  price: product.price,
+                  status: product.status,
+                })
+                .eq('id', existingProduct.id);
+
+              if (updateError) {
+                errorCount++;
+                errors.push(`Failed to update product "${product.name}": ${updateError.message}`);
+              } else {
+                successCount++;
+              }
+              continue;
+            }
+          }
+
+          // Insert new product
+          const { error: insertError } = await supabase
+            .from('products')
+            .insert({
+              ...product,
+              sku: product.sku && product.sku.trim() !== '' ? product.sku.trim() : null,
+              user_id: userId,
+            });
+
+          if (insertError) {
+            if (insertError.code === '23505') {
+              // Duplicate key error - skip this product
+              skipCount++;
+            } else {
+              errorCount++;
+              errors.push(`Failed to import product "${product.name}": ${insertError.message}`);
+            }
+          } else {
+            successCount++;
+          }
+        } catch (productError) {
+          errorCount++;
+          errors.push(`Error processing product "${product.name}": ${productError}`);
+        }
+      }
+
+      // Refresh products list
+      await fetchProducts();
+
+      // Show summary
+      if (errorCount > 0) {
+        throw new Error(`Import completed with issues:\n- ${successCount} products imported/updated\n- ${skipCount} products skipped (duplicates)\n- ${errorCount} products failed\n\nErrors:\n${errors.join('\n')}`);
+      } else {
+        toast({
+          title: "Import successful",
+          description: `${successCount} products imported/updated, ${skipCount} duplicates skipped.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error importing products:', error);
+      throw error;
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -138,15 +249,33 @@ export default function ProductsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Products</h1>
             <p className="text-gray-600 mt-2">
-              Manage your product catalog and inventory
+              Manage your product catalog and inventory ({products.length} products)
             </p>
           </div>
-          <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-            <Link href="/dashboard/products/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportProducts}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+              <Link href="/dashboard/products/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -351,6 +480,16 @@ export default function ProductsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Import Modal */}
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onImport={handleImportProducts}
+          type="products"
+          title="Import Products"
+          description="Upload an Excel file to import product data. Download the template to see the correct format."
+        />
       </div>
     </DashboardLayout>
   );

@@ -162,6 +162,7 @@ export default function HomePage() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
+              <a href="#comparison" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Excel vs Software</a>
               <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
               <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
               <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
@@ -222,6 +223,7 @@ export default function HomePage() {
             <div className="md:hidden py-4 border-t border-emerald-100">
               <div className="flex flex-col space-y-2">
                 <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
+                <a href="#comparison" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Excel vs Software</a>
                 <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
                 <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
                 <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
@@ -314,6 +316,290 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Excel vs Software Comparison Section */}
+      <section id="comparison" className="py-24 bg-gradient-to-br from-gray-50 to-emerald-50 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-100 text-red-800 text-sm font-medium mb-6">
+              <X className="w-4 h-4 mr-2" />
+              Stop Using Manual Excel
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Why <span className="text-red-600">Excel</span> is holding you back
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              See the difference between chaotic Excel spreadsheets and our organized business management system
+            </p>
+          </div>
+
+          {/* Comparison Table */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+            {/* Excel Problems */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-red-100 p-8">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mr-4">
+                  <FileText className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-red-600">Manual Excel Method</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Scattered Data</p>
+                    <p className="text-gray-600 text-sm">Customer info in one file, orders in another, products somewhere else</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Manual Entry</p>
+                    <p className="text-gray-600 text-sm">Type every product name, price, and customer detail manually</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">No Integration</p>
+                    <p className="text-gray-600 text-sm">Orders don't link to customers, invoices are separate files</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Error Prone</p>
+                    <p className="text-gray-600 text-sm">Typos, wrong prices, missing data, duplicate entries</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Time Wasting</p>
+                    <p className="text-gray-600 text-sm">Hours spent searching, copying, and organizing data</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <X className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">No Automation</p>
+                    <p className="text-gray-600 text-sm">Manual invoice creation, no WhatsApp integration, no templates</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Software Benefits */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-100 p-8">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-4">
+                  <Zap className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-emerald-600">BizMitra Software</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Everything Connected</p>
+                    <p className="text-gray-600 text-sm">Customers, orders, products, and invoices all in one place</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Smart Import</p>
+                    <p className="text-gray-600 text-sm">Upload Excel files and import 1000+ records in minutes</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Auto-Linking</p>
+                    <p className="text-gray-600 text-sm">Orders automatically link to customers and products</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Error-Free</p>
+                    <p className="text-gray-600 text-sm">Data validation, auto-complete, and smart suggestions</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Time Saving</p>
+                    <p className="text-gray-600 text-sm">Create orders in seconds, not minutes</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Full Automation</p>
+                    <p className="text-gray-600 text-sm">Auto-generate invoices, WhatsApp sharing, PDF downloads</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Real Example Comparison */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-gray-100">
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Real Example: Creating 10 Orders</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Excel Method */}
+              <div className="bg-red-50 rounded-xl p-6 border-2 border-red-200">
+                <h4 className="text-xl font-bold text-red-700 mb-4 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Excel Method
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">1</div>
+                    <span>Open customer Excel file</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">2</div>
+                    <span>Copy customer details</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">3</div>
+                    <span>Open product Excel file</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">4</div>
+                    <span>Search for each product manually</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">5</div>
+                    <span>Copy product name and price</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">6</div>
+                    <span>Open order Excel file</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">7</div>
+                    <span>Paste all data manually</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">8</div>
+                    <span>Calculate totals manually</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">9</div>
+                    <span>Repeat 9 more times...</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center mr-3 text-red-700 font-bold">10</div>
+                    <span>Create invoices separately</span>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-red-100 rounded-lg">
+                  <p className="text-red-700 font-bold">⏱️ Time: 2-3 hours</p>
+                  <p className="text-red-600 text-sm">High chance of errors</p>
+                </div>
+              </div>
+
+              {/* Software Method */}
+              <div className="bg-emerald-50 rounded-xl p-6 border-2 border-emerald-200">
+                <h4 className="text-xl font-bold text-emerald-700 mb-4 flex items-center">
+                  <Zap className="h-5 w-5 mr-2" />
+                  BizMitra Method
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">1</div>
+                    <span>Import customers and products once</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">2</div>
+                    <span>Click "Create Order"</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">3</div>
+                    <span>Select customer from dropdown</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">4</div>
+                    <span>Search and select products</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">5</div>
+                    <span>Prices auto-fill, totals auto-calculate</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">6</div>
+                    <span>Click "Save Order"</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">7</div>
+                    <span>Repeat 9 more times...</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">8</div>
+                    <span>Auto-generate invoices</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">9</div>
+                    <span>Send via WhatsApp with one click</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 bg-emerald-200 rounded-full flex items-center justify-center mr-3 text-emerald-700 font-bold">10</div>
+                    <span>Export all data anytime</span>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-emerald-100 rounded-lg">
+                  <p className="text-emerald-700 font-bold">⏱️ Time: 15-20 minutes</p>
+                  <p className="text-emerald-600 text-sm">Zero errors, fully automated</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <div className="text-center mt-12">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Ready to ditch Excel and get organized?
+            </h3>
+            <p className="text-lg text-gray-600 mb-8">
+              Join thousands of businesses who've made the switch to organized, automated management
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={handleGetStarted}
+                size="lg"
+                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 px-8 py-4 text-lg"
+              >
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button 
+                onClick={handleDemoMode}
+                variant="outline"
+                size="lg"
+                className="border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-200 px-8 py-4 text-lg"
+              >
+                See Live Demo
+              </Button>
             </div>
           </div>
         </div>

@@ -7,19 +7,24 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle } from 'lucide-react';
+import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle, Upload, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerEditModal } from '@/components/customers/CustomerEditModal';
+import { ImportModal } from '@/components/ui/ImportModal';
 import { SubscriptionLimits } from '@/components/subscription/SubscriptionLimits';
 import { Customer } from '@/types';
+import { exportToExcel } from '@/lib/excel-utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CustomersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -94,6 +99,109 @@ export default function CustomersPage() {
     fetchCustomers(); // Refresh the customers list
   };
 
+  const handleExportCustomers = () => {
+    const exportData = customers.map(customer => ({
+      name: customer.name,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      insta_handle: customer.insta_handle || '',
+      notes: customer.notes || '',
+      tags: customer.tags.join(', ') || '',
+    }));
+    
+    exportToExcel(exportData, 'customers_export', 'Customers');
+    toast({
+      title: "Export successful",
+      description: "Customers data exported to Excel file.",
+    });
+  };
+
+  const handleImportCustomers = async (importData: any[]) => {
+    try {
+      const userId = (session?.user as any)?.id;
+      let successCount = 0;
+      let skipCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      // Process each customer individually to handle duplicates
+      for (const customer of importData) {
+        try {
+          // Check if customer with this email already exists (if email provided)
+          if (customer.email) {
+            const { data: existingCustomer } = await supabase
+              .from('customers')
+              .select('id')
+              .eq('email', customer.email)
+              .eq('user_id', userId)
+              .single();
+
+            if (existingCustomer) {
+              // Update existing customer
+              const { error: updateError } = await supabase
+                .from('customers')
+                .update({
+                  name: customer.name,
+                  phone: customer.phone,
+                  insta_handle: customer.insta_handle,
+                  notes: customer.notes,
+                  tags: customer.tags,
+                })
+                .eq('id', existingCustomer.id);
+
+              if (updateError) {
+                errorCount++;
+                errors.push(`Failed to update customer "${customer.name}": ${updateError.message}`);
+              } else {
+                successCount++;
+              }
+              continue;
+            }
+          }
+
+          // Insert new customer
+          const { error: insertError } = await supabase
+            .from('customers')
+            .insert({
+              ...customer,
+              user_id: userId,
+            });
+
+          if (insertError) {
+            if (insertError.code === '23505') {
+              // Duplicate key error - skip this customer
+              skipCount++;
+            } else {
+              errorCount++;
+              errors.push(`Failed to import customer "${customer.name}": ${insertError.message}`);
+            }
+          } else {
+            successCount++;
+          }
+        } catch (customerError) {
+          errorCount++;
+          errors.push(`Error processing customer "${customer.name}": ${customerError}`);
+        }
+      }
+
+      // Refresh customers list
+      await fetchCustomers();
+
+      // Show summary
+      if (errorCount > 0) {
+        throw new Error(`Import completed with issues:\n- ${successCount} customers imported/updated\n- ${skipCount} customers skipped (duplicates)\n- ${errorCount} customers failed\n\nErrors:\n${errors.join('\n')}`);
+      } else {
+        toast({
+          title: "Import successful",
+          description: `${successCount} customers imported/updated, ${skipCount} duplicates skipped.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error importing customers:', error);
+      throw error;
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,10 +224,28 @@ export default function CustomersPage() {
               Manage your customer relationships ({customers.length} customers)
             </p>
           </div>
-          <Button onClick={() => router.push('/customers/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportCustomers}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button onClick={() => router.push('/customers/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Button>
+          </div>
         </div>
 
         {/* Subscription Limits Warning */}
@@ -232,6 +358,16 @@ export default function CustomersPage() {
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           onSuccess={handleEditSuccess}
+        />
+
+        {/* Import Modal */}
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onImport={handleImportCustomers}
+          type="customers"
+          title="Import Customers"
+          description="Upload an Excel file to import customer data. Download the template to see the correct format."
         />
       </div>
     </DashboardLayout>

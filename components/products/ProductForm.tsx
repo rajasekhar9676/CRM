@@ -360,14 +360,19 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU</Label>
+              <Label htmlFor="sku">
+                Product Code <span className="text-sm text-gray-500">(Optional)</span>
+              </Label>
               <Input
                 id="sku"
                 name="sku"
                 value={formData.sku}
                 onChange={handleChange}
-                placeholder="Product SKU"
+                placeholder="e.g., CUSTOM-001, GIFT-BOX, or leave empty"
               />
+              <p className="text-xs text-gray-500">
+                A unique code to identify this product. Useful for tracking custom orders.
+              </p>
             </div>
           </div>
 

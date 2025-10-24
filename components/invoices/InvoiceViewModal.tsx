@@ -284,7 +284,7 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
   };
 
   const generatePDFBlob = async (): Promise<Blob> => {
-    if (!invoice || !customer || !businessProfile) {
+    if (!invoice || !customer || !business) {
       throw new Error('Missing required data');
     }
 
@@ -307,32 +307,32 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
 
     // Business Info
     yPosition = 20;
-    if (businessProfile.business_name) {
+    if (business.business_name) {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(businessProfile.business_name, margin, yPosition);
+      doc.text(business.business_name, margin, yPosition);
       yPosition += 8;
     }
 
-    if (businessProfile.business_address) {
+    if (business.business_address) {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(businessProfile.business_address, margin, yPosition);
+      doc.text(business.business_address, margin, yPosition);
       yPosition += 5;
     }
 
-    if (businessProfile.business_city && businessProfile.business_state) {
-      doc.text(`${businessProfile.business_city}, ${businessProfile.business_state} ${businessProfile.business_zip || ''}`, margin, yPosition);
+    if (business.business_city && business.business_state) {
+      doc.text(`${business.business_city}, ${business.business_state} ${business.business_zip || ''}`, margin, yPosition);
       yPosition += 5;
     }
 
-    if (businessProfile.business_phone) {
-      doc.text(`Phone: ${businessProfile.business_phone}`, margin, yPosition);
+    if (business.business_phone) {
+      doc.text(`Phone: ${business.business_phone}`, margin, yPosition);
       yPosition += 5;
     }
 
-    if (businessProfile.business_email) {
-      doc.text(`Email: ${businessProfile.business_email}`, margin, yPosition);
+    if (business.business_email) {
+      doc.text(`Email: ${business.business_email}`, margin, yPosition);
       yPosition += 5;
     }
 

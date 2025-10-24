@@ -7,14 +7,17 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ShoppingCart, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, ShoppingCart, Edit, Trash2, Eye, Upload, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { OrderEditModal } from '@/components/orders/OrderEditModal';
+import { ImportModal } from '@/components/ui/ImportModal';
+import { exportToExcel } from '@/lib/excel-utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
   customer_id: string;
+  customer_name?: string;
   due_date: string;
   status: string;
   items: Array<{
@@ -35,6 +38,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -53,7 +57,10 @@ export default function OrdersPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          customers!inner(name)
+        `)
         .eq('user_id', (session?.user as any)?.id)
         .order('created_at', { ascending: false });
 
@@ -62,7 +69,13 @@ export default function OrdersPage() {
         return;
       }
 
-      setOrders(data || []);
+      // Transform the data to include customer_name
+      const transformedOrders = data?.map(order => ({
+        ...order,
+        customer_name: order.customers?.name
+      })) || [];
+
+      setOrders(transformedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -134,6 +147,114 @@ Due Date: ${new Date(order.due_date).toLocaleDateString()}
     setSelectedOrder(null);
   };
 
+  const handleExportOrders = () => {
+    const exportData = orders.map(order => ({
+      customer_name: order.customer_name,
+      status: order.status,
+      due_date: order.due_date,
+      total_amount: order.total_amount,
+      notes: order.notes || '',
+      items: JSON.stringify(order.items),
+    }));
+    
+    exportToExcel(exportData, 'orders_export', 'Orders');
+    toast({
+      title: "Export successful",
+      description: "Orders data exported to Excel file.",
+    });
+  };
+
+  const handleImportOrders = async (importData: any[]) => {
+    try {
+      const userId = (session?.user as any)?.id;
+      let successCount = 0;
+      let skipCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      // First, get customer IDs for the customer names
+      const customerNames = Array.from(new Set(importData.map(order => order.customer_name)));
+      const { data: customers } = await supabase
+        .from('customers')
+        .select('id, name')
+        .in('name', customerNames)
+        .eq('user_id', userId);
+
+      if (!customers || customers.length === 0) {
+        throw new Error('No customers found. Please import customers first.');
+      }
+
+      const customerMap = new Map(customers.map(c => [c.name, c.id]));
+
+      // Process each order individually to handle duplicates
+      for (const order of importData) {
+        try {
+          const customerId = customerMap.get(order.customer_name);
+          if (!customerId) {
+            errorCount++;
+            errors.push(`Customer "${order.customer_name}" not found for order`);
+            continue;
+          }
+
+          // Check if order with same details already exists (optional - you can remove this if you want to allow duplicates)
+          const { data: existingOrder } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('customer_id', customerId)
+            .eq('total_amount', order.total_amount)
+            .eq('due_date', order.due_date)
+            .eq('user_id', userId)
+            .single();
+
+          if (existingOrder) {
+            // Skip duplicate order
+            skipCount++;
+            continue;
+          }
+
+          // Insert new order
+          const { error: insertError } = await supabase
+            .from('orders')
+            .insert({
+              customer_id: customerId,
+              due_date: order.due_date,
+              status: order.status,
+              total_amount: order.total_amount,
+              notes: order.notes,
+              items: order.items,
+              user_id: userId,
+            });
+
+          if (insertError) {
+            errorCount++;
+            errors.push(`Failed to import order for "${order.customer_name}": ${insertError.message}`);
+          } else {
+            successCount++;
+          }
+        } catch (orderError) {
+          errorCount++;
+          errors.push(`Error processing order for "${order.customer_name}": ${orderError}`);
+        }
+      }
+
+      // Refresh orders list
+      await fetchOrders();
+
+      // Show summary
+      if (errorCount > 0) {
+        throw new Error(`Import completed with issues:\n- ${successCount} orders imported\n- ${skipCount} orders skipped (duplicates)\n- ${errorCount} orders failed\n\nErrors:\n${errors.join('\n')}`);
+      } else {
+        toast({
+          title: "Import successful",
+          description: `${successCount} orders imported, ${skipCount} duplicates skipped.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error importing orders:', error);
+      throw error;
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'New':
@@ -168,13 +289,31 @@ Due Date: ${new Date(order.due_date).toLocaleDateString()}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
             <p className="text-muted-foreground">
-              Track and manage your orders
+              Track and manage your orders ({orders.length} orders)
             </p>
           </div>
-          <Button onClick={() => router.push('/orders/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Order
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportOrders}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button onClick={() => router.push('/orders/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Order
+            </Button>
+          </div>
         </div>
 
         {orders.length === 0 ? (
@@ -284,6 +423,16 @@ Due Date: ${new Date(order.due_date).toLocaleDateString()}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onSuccess={handleEditSuccess}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportOrders}
+        type="orders"
+        title="Import Orders"
+        description="Upload an Excel file to import order data. Download the template to see the correct format."
       />
     </DashboardLayout>
   );
