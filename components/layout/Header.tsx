@@ -26,14 +26,9 @@ export function Header() {
         {/* Logo */}
         <div className="flex items-center space-x-4">
           <img 
-            src="/images/bizmitra-logo-icon.svg" 
+            src="/images/bizmitra-logo.png" 
             alt="BizMitra Logo" 
             className="h-10 w-10"
-            style={{ 
-              imageRendering: 'crisp-edges',
-              filter: 'contrast(1.1)',
-              WebkitFilter: 'contrast(1.1)'
-            }}
           />
         </div>
         

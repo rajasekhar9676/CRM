@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, Edit, Trash2, Eye, MessageCircle, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { InvoiceViewModal } from '@/components/invoices/InvoiceViewModal';
+import { InvoiceEditModal } from '@/components/invoices/InvoiceEditModal';
 import { SubscriptionLimits } from '@/components/subscription/SubscriptionLimits';
+import { useToast } from '@/hooks/use-toast';
 
 interface Invoice {
   id: string;
@@ -24,10 +26,12 @@ interface Invoice {
 export default function InvoicesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -96,10 +100,175 @@ export default function InvoicesPage() {
     setSelectedInvoice(null);
   };
 
-  const generateWhatsAppLink = (invoice: Invoice) => {
-    const message = `Hello! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. Please review and let me know if you have any questions.`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+  const handleEdit = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    fetchInvoices();
+    setIsEditModalOpen(false);
+    setSelectedInvoice(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedInvoice(null);
+  };
+
+  const generateWhatsAppLink = async (invoice: Invoice) => {
+    try {
+      // First generate the PDF
+      const pdfBlob = await generatePDFBlob(invoice);
+      
+      // Create a download link for the PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice.id.slice(-8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Show instructions for WhatsApp
+      const message = `Hello! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. I've downloaded the PDF for you. Please attach it to your WhatsApp message and send it to your customer.`;
+      
+      // Open WhatsApp with instructions
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      toast({
+        title: "PDF Downloaded",
+        description: "Invoice PDF has been downloaded. Please attach it to your WhatsApp message.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF for WhatsApp:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generatePDFBlob = async (invoice: Invoice): Promise<Blob> => {
+    // Fetch customer and business details for PDF
+    const [customerResult, businessResult] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('*')
+        .eq('id', invoice.customer_id)
+        .single(),
+      supabase
+        .from('users')
+        .select('business_name, business_address, business_city, business_state, business_zip, business_phone, business_email, business_website, business_tax_id')
+        .eq('id', (session?.user as any)?.id)
+        .single()
+    ]);
+
+    if (customerResult.error) {
+      throw new Error('Error fetching customer');
+    }
+
+    if (businessResult.error) {
+      throw new Error('Error fetching business profile');
+    }
+
+    const customer = customerResult.data;
+    const business = businessResult.data;
+    const doc = new (await import('jspdf')).jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', pageWidth - margin - 50, yPosition);
+    
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Invoice #: ${invoice.id.slice(-8)}`, pageWidth - margin - 50, yPosition);
+    yPosition += 5;
+    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, pageWidth - margin - 50, yPosition);
+
+    // Business Info
+    yPosition = 20;
+    if (business.business_name) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(business.business_name, margin, yPosition);
+      yPosition += 8;
+    }
+
+    if (business.business_address) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(business.business_address, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (business.business_city && business.business_state) {
+      doc.text(`${business.business_city}, ${business.business_state} ${business.business_zip || ''}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (business.business_phone) {
+      doc.text(`Phone: ${business.business_phone}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (business.business_email) {
+      doc.text(`Email: ${business.business_email}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    // Customer Info
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(customer.name, margin, yPosition);
+    yPosition += 5;
+
+    if (customer.email) {
+      doc.text(customer.email, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (customer.phone) {
+      doc.text(customer.phone, margin, yPosition);
+      yPosition += 5;
+    }
+
+    // Invoice Details
+    yPosition += 15;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Amount Due:', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(16);
+    doc.text(`$${invoice.amount.toFixed(2)}`, margin, yPosition);
+
+    // Status
+    yPosition += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Status: ${invoice.status}`, margin, yPosition);
+
+    // Footer
+    yPosition = doc.internal.pageSize.getHeight() - 30;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for your business!', margin, yPosition);
+
+    // Convert to blob
+    return doc.output('blob');
   };
 
   const generatePDF = async (invoice: Invoice) => {
@@ -372,6 +541,15 @@ export default function InvoicesPage() {
                         variant="outline" 
                         size="sm"
                         className="text-xs sm:text-sm"
+                        onClick={() => handleEdit(invoice)}
+                      >
+                        <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs sm:text-sm"
                         onClick={() => generateWhatsAppLink(invoice)}
                       >
                         <MessageCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
@@ -412,6 +590,14 @@ export default function InvoicesPage() {
           invoice={selectedInvoice}
           isOpen={isViewModalOpen}
           onClose={handleCloseModal}
+        />
+
+        {/* Invoice Edit Modal */}
+        <InvoiceEditModal
+          invoice={selectedInvoice}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSuccess={handleEditSuccess}
         />
       </div>
     </DashboardLayout>

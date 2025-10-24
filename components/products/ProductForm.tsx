@@ -111,6 +111,21 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
 
       if (uploadError) {
         console.error('Error uploading image:', uploadError);
+        
+        // Check if it's a bucket not found error
+        if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('400')) {
+          toast({
+            title: "Storage Setup Required",
+            description: "The products storage bucket is not configured. Please contact your administrator to set up image storage.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Upload Failed",
+            description: "Failed to upload image. Please try again.",
+            variant: "destructive",
+          });
+        }
         return null;
       }
 
@@ -121,6 +136,11 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
       return data.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "An unexpected error occurred while uploading the image.",
+        variant: "destructive",
+      });
       return null;
     }
   };
@@ -153,15 +173,17 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
 
       // Upload new image if provided
       if (formData.image) {
-        imageUrl = await uploadImage(formData.image) || undefined;
-        if (!imageUrl) {
+        const uploadedImageUrl = await uploadImage(formData.image);
+        if (uploadedImageUrl) {
+          imageUrl = uploadedImageUrl;
+        } else {
+          // If image upload fails, show warning but allow product to be saved
           toast({
-            title: "Upload Error",
-            description: "Failed to upload image. Please try again.",
+            title: "Image Upload Failed",
+            description: "Product will be saved without image. You can add an image later.",
             variant: "destructive",
           });
-          setLoading(false);
-          return;
+          // Continue without image - don't return here
         }
       }
 

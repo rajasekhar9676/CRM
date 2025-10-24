@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Plus, ShoppingCart, Edit, Trash2, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { OrderEditModal } from '@/components/orders/OrderEditModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
@@ -28,8 +30,11 @@ interface Order {
 export default function OrdersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -76,16 +81,57 @@ export default function OrdersPage() {
 
       if (error) {
         console.error('Error deleting order:', error);
-        alert('Error deleting order. Please try again.');
+        toast({
+          title: "Error",
+          description: "Failed to delete order. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
 
       // Refresh orders list
       fetchOrders();
+      toast({
+        title: "Success",
+        description: "Order deleted successfully!",
+      });
     } catch (error) {
       console.error('Error deleting order:', error);
-      alert('Error deleting order. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to delete order. Please try again.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleEdit = (order: Order) => {
+    setSelectedOrder(order);
+    setIsEditModalOpen(true);
+  };
+
+  const handleView = (order: Order) => {
+    // For now, just show order details in an alert
+    // You can create a proper view modal later
+    const orderDetails = `
+Order ID: ${order.id.slice(-8)}
+Status: ${order.status}
+Total: $${order.total_amount.toFixed(2)}
+Items: ${order.items.map(item => `${item.name} x${item.quantity}`).join(', ')}
+Due Date: ${new Date(order.due_date).toLocaleDateString()}
+    `;
+    alert(orderDetails);
+  };
+
+  const handleEditSuccess = () => {
+    fetchOrders();
+    setIsEditModalOpen(false);
+    setSelectedOrder(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedOrder(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -198,11 +244,19 @@ export default function OrdersPage() {
                     )}
 
                     <div className="flex justify-end space-x-2 pt-2 border-t">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleView(order)}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(order)}
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </Button>
@@ -223,6 +277,14 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Order Edit Modal */}
+      <OrderEditModal
+        order={selectedOrder}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSuccess={handleEditSuccess}
+      />
     </DashboardLayout>
   );
 }

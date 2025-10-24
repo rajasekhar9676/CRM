@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AuthModal from '@/components/auth/AuthModal';
 import { PricingSection } from '@/components/pricing/PricingSection';
+import { Footer } from '@/components/layout/Footer';
 import { 
   Loader2, 
   Users, 
@@ -155,11 +156,6 @@ export default function HomePage() {
                 src="/images/bizmitra-logo.png" 
                 alt="BizMitra Logo" 
                 className="h-20 w-auto"
-                style={{ 
-                  imageRendering: 'crisp-edges',
-                  filter: 'contrast(1.1)',
-                  WebkitFilter: 'contrast(1.1)'
-                }}
               />
             </Link>
 
@@ -182,19 +178,32 @@ export default function HomePage() {
                 </Button>
               ) : (
                 <>
-                  <Button 
-                    onClick={handleLogin}
-                    variant="outline"
-                    className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-600 transition-all duration-200"
-                  >
-                    Login
-                  </Button>
-                  <Button 
-                    onClick={handleRegister}
-                    className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    Register
-                  </Button>
+                  {/* Desktop Auth Buttons */}
+                  <div className="hidden md:flex items-center space-x-4">
+                    <Button 
+                      onClick={handleLogin}
+                      variant="outline"
+                      className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-600 transition-all duration-200"
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      onClick={handleRegister}
+                      className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      Register
+                    </Button>
+                  </div>
+                  
+                  {/* Mobile Auth Button - Only Login */}
+                  <div className="md:hidden">
+                    <Button 
+                      onClick={handleLogin}
+                      className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      Login
+                    </Button>
+                  </div>
                 </>
               )}
               
@@ -500,50 +509,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <img 
-                  src="/images/bizmitra-logo-icon.svg" 
-                  alt="BizMitra Logo" 
-                  className="h-8 w-8"
-                />
-              </div>
-              <p className="text-gray-400">Simple CRM for managing customers, orders, and invoices.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Demo</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 BizMitra. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
 
       {/* Auth Modal */}
       <AuthModal 

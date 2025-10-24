@@ -14,14 +14,9 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="/images/bizmitra-logo-icon.svg" 
+                src="/images/bizmitra-logo.png" 
                 alt="BizMitra Logo" 
                 className="h-10 w-10"
-                style={{ 
-                  imageRendering: 'crisp-edges',
-                  filter: 'contrast(1.1)',
-                  WebkitFilter: 'contrast(1.1)'
-                }}
               />
             </div>
             <p className="text-gray-300 text-sm">

@@ -6,7 +6,7 @@ import { SubscriptionProvider } from '@/context/SubscriptionProvider'
 import { Toaster } from '@/components/ui/toaster'
 import { WhatsAppFloat } from '@/components/ui/whatsapp-float'
 import { WHATSAPP_CONFIG } from '@/lib/whatsapp-config'
-import { Footer } from '@/components/layout/Footer'
+import { ConditionalFooter } from '../components/layout/ConditionalFooter'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     title: 'BizMitra',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192x192.png',
+    icon: '/images/bizmitra-logo.png',
+    apple: '/images/bizmitra-logo.png',
   },
 }
 
@@ -49,7 +49,7 @@ export default function RootLayout({
         <AuthProvider>
           <SubscriptionProvider>
             {children}
-            <Footer />
+            <ConditionalFooter />
             <Toaster />
             <WhatsAppFloat 
               phoneNumber={WHATSAPP_CONFIG.phoneNumber} 

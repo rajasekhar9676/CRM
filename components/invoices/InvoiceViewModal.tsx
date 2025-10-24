@@ -251,12 +251,135 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
     doc.save(`invoice-${invoice.id.slice(-8)}.pdf`);
   };
 
-  const generateWhatsAppLink = () => {
+  const generateWhatsAppLink = async () => {
     if (!invoice || !customer) return;
 
-    const message = `Hello ${customer.name}! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. Please review and let me know if you have any questions.`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      // First generate the PDF
+      const pdfBlob = await generatePDFBlob();
+      
+      // Create a download link for the PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice.id.slice(-8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Show instructions for WhatsApp
+      const message = `Hello ${customer.name}! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. I've downloaded the PDF for you. Please attach it to your WhatsApp message and send it to your customer.`;
+      
+      // Open WhatsApp with instructions
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      // Show success message
+      alert('PDF downloaded! Please attach it to your WhatsApp message.');
+    } catch (error) {
+      console.error('Error generating PDF for WhatsApp:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };
+
+  const generatePDFBlob = async (): Promise<Blob> => {
+    if (!invoice || !customer || !businessProfile) {
+      throw new Error('Missing required data');
+    }
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', pageWidth - margin - 50, yPosition);
+    
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Invoice #: ${invoice.id.slice(-8)}`, pageWidth - margin - 50, yPosition);
+    yPosition += 5;
+    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, pageWidth - margin - 50, yPosition);
+
+    // Business Info
+    yPosition = 20;
+    if (businessProfile.business_name) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(businessProfile.business_name, margin, yPosition);
+      yPosition += 8;
+    }
+
+    if (businessProfile.business_address) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(businessProfile.business_address, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (businessProfile.business_city && businessProfile.business_state) {
+      doc.text(`${businessProfile.business_city}, ${businessProfile.business_state} ${businessProfile.business_zip || ''}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (businessProfile.business_phone) {
+      doc.text(`Phone: ${businessProfile.business_phone}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (businessProfile.business_email) {
+      doc.text(`Email: ${businessProfile.business_email}`, margin, yPosition);
+      yPosition += 5;
+    }
+
+    // Customer Info
+    yPosition += 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(customer.name, margin, yPosition);
+    yPosition += 5;
+
+    if (customer.email) {
+      doc.text(customer.email, margin, yPosition);
+      yPosition += 5;
+    }
+
+    if (customer.phone) {
+      doc.text(customer.phone, margin, yPosition);
+      yPosition += 5;
+    }
+
+    // Invoice Details
+    yPosition += 15;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Amount Due:', margin, yPosition);
+    yPosition += 8;
+    doc.setFontSize(16);
+    doc.text(`$${invoice.amount.toFixed(2)}`, margin, yPosition);
+
+    // Status
+    yPosition += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Status: ${invoice.status}`, margin, yPosition);
+
+    // Footer
+    yPosition = doc.internal.pageSize.getHeight() - 30;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for your business!', margin, yPosition);
+
+    // Convert to blob
+    return doc.output('blob');
   };
 
   const getStatusColor = (status: string) => {
