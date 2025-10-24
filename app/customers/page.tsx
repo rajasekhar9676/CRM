@@ -192,8 +192,9 @@ export default function CustomersPage() {
         throw new Error(`Import completed with issues:\n- ${successCount} customers imported/updated\n- ${skipCount} customers skipped (duplicates)\n- ${errorCount} customers failed\n\nErrors:\n${errors.join('\n')}`);
       } else {
         toast({
-          title: "Import successful",
-          description: `${successCount} customers imported/updated, ${skipCount} duplicates skipped.`,
+          title: "Import successful! 🎉",
+          description: `${successCount} customers imported/updated, ${skipCount} duplicates skipped. Your customers are now available in orders and invoices!`,
+          duration: 5000,
         });
       }
     } catch (error) {

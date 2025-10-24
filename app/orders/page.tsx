@@ -245,8 +245,9 @@ Due Date: ${new Date(order.due_date).toLocaleDateString()}
         throw new Error(`Import completed with issues:\n- ${successCount} orders imported\n- ${skipCount} orders skipped (duplicates)\n- ${errorCount} orders failed\n\nErrors:\n${errors.join('\n')}`);
       } else {
         toast({
-          title: "Import successful",
-          description: `${successCount} orders imported, ${skipCount} duplicates skipped.`,
+          title: "Import successful! 🎉",
+          description: `${successCount} orders imported, ${skipCount} duplicates skipped. Your orders are now available for creating invoices!`,
+          duration: 5000,
         });
       }
     } catch (error) {

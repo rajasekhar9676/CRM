@@ -69,6 +69,8 @@ export default function ProductsPage() {
         return;
       }
 
+      console.log('Fetched products:', data?.length || 0, 'products');
+      console.log('Products data:', data);
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -191,6 +193,7 @@ export default function ProductsPage() {
             .insert({
               ...product,
               sku: product.sku && product.sku.trim() !== '' ? product.sku.trim() : null,
+              status: product.status || 'active', // Default to active if no status provided
               user_id: userId,
             });
 
@@ -198,30 +201,42 @@ export default function ProductsPage() {
             if (insertError.code === '23505') {
               // Duplicate key error - skip this product
               skipCount++;
+              console.log(`Skipped duplicate product: ${product.name}`);
             } else {
               errorCount++;
               errors.push(`Failed to import product "${product.name}": ${insertError.message}`);
+              console.error(`Error importing product "${product.name}":`, insertError);
             }
           } else {
             successCount++;
+            console.log(`Successfully imported product: ${product.name}`);
           }
         } catch (productError) {
           errorCount++;
-          errors.push(`Error processing product "${product.name}": ${productError}`);
+          const errorMessage = productError instanceof Error ? productError.message : String(productError);
+          errors.push(`Error processing product "${product.name}": ${errorMessage}`);
+          console.error(`Error processing product "${product.name}":`, productError);
         }
       }
 
-      // Refresh products list
-      await fetchProducts();
-
-      // Show summary
+      // Show summary first
       if (errorCount > 0) {
         throw new Error(`Import completed with issues:\n- ${successCount} products imported/updated\n- ${skipCount} products skipped (duplicates)\n- ${errorCount} products failed\n\nErrors:\n${errors.join('\n')}`);
       } else {
         toast({
-          title: "Import successful",
-          description: `${successCount} products imported/updated, ${skipCount} duplicates skipped.`,
+          title: "Import successful! 🎉",
+          description: `${successCount} products imported/updated, ${skipCount} duplicates skipped. Refreshing products list...`,
+          duration: 3000,
         });
+        
+        // Refresh products list multiple times to ensure data is loaded
+        await fetchProducts();
+        
+        // Additional refresh after a short delay
+        setTimeout(async () => {
+          console.log('Refreshing products list again...');
+          await fetchProducts();
+        }, 2000);
       }
     } catch (error) {
       console.error('Error importing products:', error);
@@ -253,6 +268,18 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setLoading(true);
+                fetchProducts();
+              }}
+              className="flex items-center gap-2"
+              disabled={loading}
+            >
+              <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button
               variant="outline"
               onClick={() => setIsImportModalOpen(true)}
@@ -410,7 +437,15 @@ export default function ProductsPage() {
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                            {/* Show if product was recently created (within last 5 minutes) */}
+                            {new Date().getTime() - new Date(product.created_at).getTime() < 5 * 60 * 1000 && (
+                              <Badge variant="outline" className="text-green-600 border-green-200 text-xs">
+                                New
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                             {product.description || 'No description'}
                           </p>
