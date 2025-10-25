@@ -188,7 +188,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Total Revenue',
-      value: `$${stats.totalRevenue.toLocaleString()}`,
+      value: `₹${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
       description: 'From paid invoices',
       gradient: 'from-emerald-600 to-teal-700',

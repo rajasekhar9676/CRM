@@ -152,7 +152,7 @@ export default function ProductReportsPage() {
                     <div>
                       <p className="text-sm font-medium text-amber-600">Average Price</p>
                       <p className="text-3xl font-bold text-amber-700">
-                        ${stats.averagePrice.toFixed(2)}
+                        ₹{stats.averagePrice.toFixed(2)}
                       </p>
                     </div>
                     <BarChart3 className="h-8 w-8 text-amber-600" />
@@ -248,7 +248,7 @@ export default function ProductReportsPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-600">Average Product Price</span>
                       <span className="text-lg font-semibold text-gray-900">
-                        ${stats.averagePrice.toFixed(2)}
+                        ₹{stats.averagePrice.toFixed(2)}
                       </span>
                     </div>
 

@@ -311,7 +311,7 @@ export default function HomePage() {
                         <h3 className="font-semibold text-gray-900">Revenue</h3>
                         <DollarSign className="h-8 w-8 text-green-600" />
                       </div>
-                      <div className="text-3xl font-bold text-green-600">$45,678</div>
+                      <div className="text-3xl font-bold text-green-600">₹45,678</div>
                     </div>
                   </div>
                 </div>

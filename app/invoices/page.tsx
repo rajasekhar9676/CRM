@@ -132,7 +132,7 @@ export default function InvoicesPage() {
       URL.revokeObjectURL(url);
       
       // Show instructions for WhatsApp
-      const message = `Hello! Your invoice #${invoice.id.slice(-8)} for $${invoice.amount.toFixed(2)} is ready. I've downloaded the PDF for you. Please attach it to your WhatsApp message and send it to your customer.`;
+      const message = `Hello! Your invoice #${invoice.id.slice(-8)} for ₹${invoice.amount.toFixed(2)} is ready. I've downloaded the PDF for you. Please attach it to your WhatsApp message and send it to your customer.`;
       
       // Open WhatsApp with instructions
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -253,7 +253,7 @@ export default function InvoicesPage() {
     doc.text('Amount Due:', margin, yPosition);
     yPosition += 8;
     doc.setFontSize(16);
-    doc.text(`$${invoice.amount.toFixed(2)}`, margin, yPosition);
+    doc.text(`₹${invoice.amount.toFixed(2)}`, margin, yPosition);
 
     // Status
     yPosition += 10;
@@ -392,7 +392,7 @@ export default function InvoicesPage() {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text('Invoice Amount', margin, yPosition);
-      doc.text(`$${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
+      doc.text(`₹${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
       
       yPosition += 10;
       doc.line(margin, yPosition, pageWidth - margin, yPosition);
@@ -402,7 +402,7 @@ export default function InvoicesPage() {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Total:', pageWidth - margin - 50, yPosition);
-      doc.text(`$${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
+      doc.text(`₹${invoice.amount.toFixed(2)}`, pageWidth - margin - 30, yPosition);
 
       yPosition += 20;
 
@@ -457,17 +457,25 @@ export default function InvoicesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Invoices</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Generate and manage your invoices
             </p>
           </div>
-          <Button onClick={() => router.push('/invoices/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Generate Invoice
-          </Button>
+          
+          {/* Mobile-first button layout */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Primary action - always visible */}
+            <Button 
+              onClick={() => router.push('/invoices/new')} 
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Generate Invoice
+            </Button>
+          </div>
         </div>
 
         {/* Subscription Limits Warning */}
@@ -483,7 +491,10 @@ export default function InvoicesPage() {
                   <p className="text-muted-foreground mb-4">
                     Start by generating your first invoice to get started.
                   </p>
-                  <Button onClick={() => router.push('/invoices/new')}>
+                  <Button 
+                    onClick={() => router.push('/invoices/new')}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Generate Your First Invoice
                   </Button>
@@ -495,87 +506,98 @@ export default function InvoicesPage() {
           <div className="space-y-4">
             {invoices.map((invoice) => (
               <Card key={invoice.id}>
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">Invoice #{invoice.id.slice(-8)}</CardTitle>
-                      <CardDescription>
-                        Created: {new Date(invoice.created_at).toLocaleDateString()}
-                      </CardDescription>
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="space-y-3">
+                    {/* Mobile-first header layout */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg">Invoice #{invoice.id.slice(-8)}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                          Created: {new Date(invoice.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <Badge className={`${getStatusColor(invoice.status)} text-xs`}>
+                          {invoice.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <Badge className={getStatusColor(invoice.status)}>
-                        {invoice.status}
-                      </Badge>
-                      <div className="text-left sm:text-right">
-                        <div className="text-lg font-semibold">
-                          ${invoice.amount.toFixed(2)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Customer: {invoice.customer_id}
+                    
+                    {/* Price and customer info */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
+                        Customer: {invoice.customer_id}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg sm:text-xl font-semibold">
+                          ₹{invoice.amount.toFixed(2)}
                         </div>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0">
                   <div className="space-y-3">
                     {invoice.order_id && (
                       <div>
-                        <h4 className="font-medium mb-1">Related Order:</h4>
-                        <p className="text-sm text-muted-foreground">{invoice.order_id}</p>
+                        <h4 className="font-medium mb-1 text-sm sm:text-base">Related Order:</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{invoice.order_id}</p>
                       </div>
                     )}
 
-                    <div className="flex flex-wrap justify-end gap-2 pt-2 border-t">
+                    {/* Mobile-first action buttons */}
+                    <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t">
+                      <div className="grid grid-cols-2 sm:flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 text-xs sm:text-sm"
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <Eye className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">View</span>
+                          <span className="sm:hidden">👁</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 text-xs sm:text-sm"
+                          onClick={() => handleEdit(invoice)}
+                        >
+                          <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Edit</span>
+                          <span className="sm:hidden">✏</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 text-xs sm:text-sm"
+                          onClick={() => generateWhatsAppLink(invoice)}
+                        >
+                          <MessageCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                          <span className="sm:hidden">💬</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1 text-xs sm:text-sm"
+                          onClick={() => generatePDF(invoice)}
+                        >
+                          <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Download</span>
+                          <span className="sm:hidden">↓</span>
+                        </Button>
+                      </div>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="text-xs sm:text-sm"
-                        onClick={() => handleViewInvoice(invoice)}
-                      >
-                        <Eye className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        View
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs sm:text-sm"
-                        onClick={() => handleEdit(invoice)}
-                      >
-                        <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs sm:text-sm"
-                        onClick={() => generateWhatsAppLink(invoice)}
-                      >
-                        <MessageCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        WhatsApp
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs sm:text-sm"
-                        onClick={() => generatePDF(invoice)}
-                      >
-                        <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Download
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                        <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="w-full sm:w-auto text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
                         onClick={() => handleDelete(invoice.id)}
                       >
                         <Trash2 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Delete
+                        <span className="hidden sm:inline">Delete</span>
+                        <span className="sm:hidden">🗑</span>
                       </Button>
                     </div>
                   </div>

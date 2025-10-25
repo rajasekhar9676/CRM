@@ -36,8 +36,9 @@ export default function PricingPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="space-y-4">
+          {/* Back Button - Mobile First */}
+          <div className="flex justify-start">
             <Button
               variant="outline"
               size="sm"
@@ -45,33 +46,36 @@ export default function PricingPage() {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Crown className="h-8 w-8 text-yellow-500" />
-                Choose Your Plan
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Upgrade your BizMitra experience with our flexible pricing plans
-              </p>
-            </div>
+          </div>
+          
+          {/* Title and Description */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center justify-center sm:justify-start gap-2">
+              <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+              Choose Your Plan
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+              Upgrade your BizMitra experience with our flexible pricing plans
+            </p>
           </div>
         </div>
 
         {/* Current Plan Status */}
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-center sm:text-left">
               <CheckCircle className="h-5 w-5 text-blue-600" />
               Your Current Plan
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-center sm:text-left">
               You're currently on the Free plan. Upgrade to unlock more features and grow your business.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="p-4 bg-white rounded-lg border">
                 <h3 className="font-semibold text-gray-900 mb-2">Free Plan Features</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
@@ -90,7 +94,7 @@ export default function PricingPage() {
                   <li>• Priority support</li>
                 </ul>
               </div>
-              <div className="p-4 bg-white rounded-lg border">
+              <div className="p-4 bg-white rounded-lg border sm:col-span-2 lg:col-span-1">
                 <h3 className="font-semibold text-gray-900 mb-2">Why Upgrade?</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Scale your business</li>
@@ -109,13 +113,13 @@ export default function PricingPage() {
         {/* FAQ Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Frequently Asked Questions</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-center sm:text-left">Frequently Asked Questions</CardTitle>
+            <CardDescription className="text-center sm:text-left">
               Everything you need to know about our pricing and plans
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Can I change plans anytime?</h3>
                 <p className="text-sm text-gray-600">
@@ -147,22 +151,23 @@ export default function PricingPage() {
         {/* Contact Support */}
         <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
           <CardHeader>
-            <CardTitle>Need Help Choosing?</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-center sm:text-left">Need Help Choosing?</CardTitle>
+            <CardDescription className="text-center sm:text-left">
               Our team is here to help you find the perfect plan for your business
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={() => router.push('/settings')}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 order-1 sm:order-1"
               >
                 Contact Support
               </Button>
               <Button 
                 variant="outline"
                 onClick={() => router.push('/dashboard')}
+                className="w-full sm:w-auto order-2 sm:order-2"
               >
                 Back to Dashboard
               </Button>

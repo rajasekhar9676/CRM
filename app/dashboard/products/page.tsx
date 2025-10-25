@@ -152,61 +152,68 @@ export default function ProductsPage() {
       let errorCount = 0;
       const errors: string[] = [];
 
+      console.log('Starting import of', importData.length, 'products');
+
       // Process each product individually to handle duplicates
       for (const product of importData) {
         try {
-          // Check if product with this SKU already exists (only if SKU is provided)
-          if (product.sku && product.sku.trim() !== '') {
-            const { data: existingProduct } = await supabase
+          console.log('Processing product:', product.name);
+          
+          // Check if product with this name already exists (fallback to name if no SKU)
+          const checkField = product.sku && product.sku.trim() !== '' ? 'sku' : 'name';
+          const checkValue = product.sku && product.sku.trim() !== '' ? product.sku.trim() : product.name.trim();
+          
+          const { data: existingProduct } = await supabase
+            .from('products')
+            .select('id')
+            .eq(checkField, checkValue)
+            .eq('user_id', userId)
+            .single();
+
+          if (existingProduct) {
+            // Update existing product
+            console.log(`Updating existing product: ${product.name}`);
+            const { error: updateError } = await supabase
               .from('products')
-              .select('id')
-              .eq('sku', product.sku.trim())
-              .eq('user_id', userId)
-              .single();
+              .update({
+                name: product.name,
+                description: product.description,
+                category: product.category,
+                price: product.price,
+                status: product.status || 'active',
+                sku: product.sku && product.sku.trim() !== '' ? product.sku.trim() : null,
+              })
+              .eq('id', existingProduct.id);
 
-            if (existingProduct) {
-              // Update existing product
-              const { error: updateError } = await supabase
-                .from('products')
-                .update({
-                  name: product.name,
-                  description: product.description,
-                  category: product.category,
-                  price: product.price,
-                  status: product.status,
-                })
-                .eq('id', existingProduct.id);
-
-              if (updateError) {
-                errorCount++;
-                errors.push(`Failed to update product "${product.name}": ${updateError.message}`);
-              } else {
-                successCount++;
-              }
-              continue;
+            if (updateError) {
+              errorCount++;
+              errors.push(`Failed to update product "${product.name}": ${updateError.message}`);
+              console.error(`Update error for ${product.name}:`, updateError);
+            } else {
+              successCount++;
+              console.log(`Successfully updated product: ${product.name}`);
             }
+            continue;
           }
 
           // Insert new product
+          console.log(`Inserting new product: ${product.name}`);
           const { error: insertError } = await supabase
             .from('products')
             .insert({
-              ...product,
+              name: product.name,
+              description: product.description || null,
+              category: product.category || null,
+              price: parseFloat(product.price) || 0,
               sku: product.sku && product.sku.trim() !== '' ? product.sku.trim() : null,
-              status: product.status || 'active', // Default to active if no status provided
+              status: product.status || 'active',
               user_id: userId,
             });
 
           if (insertError) {
-            if (insertError.code === '23505') {
-              // Duplicate key error - skip this product
-              skipCount++;
-              console.log(`Skipped duplicate product: ${product.name}`);
-            } else {
-              errorCount++;
-              errors.push(`Failed to import product "${product.name}": ${insertError.message}`);
-              console.error(`Error importing product "${product.name}":`, insertError);
-            }
+            errorCount++;
+            errors.push(`Failed to import product "${product.name}": ${insertError.message}`);
+            console.error(`Insert error for ${product.name}:`, insertError);
           } else {
             successCount++;
             console.log(`Successfully imported product: ${product.name}`);
@@ -219,24 +226,21 @@ export default function ProductsPage() {
         }
       }
 
-      // Show summary first
+      console.log(`Import completed: ${successCount} success, ${skipCount} skipped, ${errorCount} errors`);
+
+      // Show summary
       if (errorCount > 0) {
         throw new Error(`Import completed with issues:\n- ${successCount} products imported/updated\n- ${skipCount} products skipped (duplicates)\n- ${errorCount} products failed\n\nErrors:\n${errors.join('\n')}`);
       } else {
         toast({
           title: "Import successful! 🎉",
-          description: `${successCount} products imported/updated, ${skipCount} duplicates skipped. Refreshing products list...`,
+          description: `${successCount} products imported/updated, ${skipCount} duplicates skipped.`,
           duration: 3000,
         });
         
-        // Refresh products list multiple times to ensure data is loaded
+        // Refresh products list
+        console.log('Refreshing products list...');
         await fetchProducts();
-        
-        // Additional refresh after a short delay
-        setTimeout(async () => {
-          console.log('Refreshing products list again...');
-          await fetchProducts();
-        }, 2000);
       }
     } catch (error) {
       console.error('Error importing products:', error);
@@ -260,48 +264,60 @@ export default function ProductsPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Products</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Products</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
               Manage your product catalog and inventory ({products.length} products)
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setLoading(true);
-                fetchProducts();
-              }}
-              className="flex items-center gap-2"
-              disabled={loading}
-            >
-              <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportProducts}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+          
+          {/* Mobile-first button layout */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Primary action - always visible */}
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
               <Link href="/dashboard/products/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Link>
             </Button>
+            
+            {/* Secondary actions - responsive layout */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full sm:w-auto">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setLoading(true);
+                    fetchProducts();
+                  }}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+                  disabled={loading}
+                >
+                  <Loader2 className={`h-3 w-3 sm:h-4 sm:w-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                  <span className="sm:hidden">↻</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+                >
+                  <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Import</span>
+                  <span className="sm:hidden">↑</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleExportProducts}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+                >
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Export</span>
+                  <span className="sm:hidden">↓</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -351,7 +367,7 @@ export default function ProductsPage() {
                 <div>
                   <p className="text-sm font-medium text-purple-600">Total Value</p>
                   <p className="text-2xl font-bold text-purple-700">
-                    ${products.reduce((sum, p) => sum + p.price, 0).toLocaleString()}
+                    ₹{products.reduce((sum, p) => sum + p.price, 0).toLocaleString()}
                   </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-purple-600" />
@@ -362,41 +378,45 @@ export default function ProductsPage() {
 
         {/* Filters */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-4">
+              {/* Search - full width on mobile */}
+              <div className="w-full">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     placeholder="Search products..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full"
                   />
                 </div>
               </div>
               
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="archived">Archived</option>
-              </select>
+              {/* Filters - responsive grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="archived">Archived</option>
+                </select>
 
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -431,81 +451,90 @@ export default function ProductsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredProducts.map((product) => (
                   <Card key={product.id} className="group hover:shadow-lg transition-all duration-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                            {/* Show if product was recently created (within last 5 minutes) */}
-                            {new Date().getTime() - new Date(product.created_at).getTime() < 5 * 60 * 1000 && (
-                              <Badge variant="outline" className="text-green-600 border-green-200 text-xs">
-                                New
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                            {product.description || 'No description'}
-                          </p>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge className={getStatusColor(product.status)}>
-                              {product.status}
-                            </Badge>
-                            {product.category && (
-                              <Badge variant="outline">{product.category}</Badge>
-                            )}
+                    <CardContent className="p-4 sm:p-6">
+                      {/* Mobile-first layout */}
+                      <div className="space-y-3">
+                        {/* Image and title row */}
+                        <div className="flex items-start gap-3">
+                          {product.image_url ? (
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                              <Image
+                                src={product.image_url}
+                                alt={product.name}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <ImageIcon className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{product.name}</h3>
+                              {/* Show if product was recently created (within last 5 minutes) */}
+                              {new Date().getTime() - new Date(product.created_at).getTime() < 5 * 60 * 1000 && (
+                                <Badge variant="outline" className="text-green-600 border-green-200 text-xs flex-shrink-0">
+                                  New
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                              {product.description || 'No description'}
+                            </p>
                           </div>
                         </div>
-                        {product.image_url ? (
-                          <div className="w-16 h-16 rounded-lg overflow-hidden ml-4">
-                            <Image
-                              src={product.image_url}
-                              alt={product.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center ml-4">
-                            <ImageIcon className="h-6 w-6 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
 
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-2xl font-bold text-emerald-600">
-                            ${product.price.toFixed(2)}
-                          </p>
-                          {product.sku && (
-                            <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                        {/* Status and category badges */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={`${getStatusColor(product.status)} text-xs`}>
+                            {product.status}
+                          </Badge>
+                          {product.category && (
+                            <Badge variant="outline" className="text-xs">{product.category}</Badge>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button asChild variant="outline" size="sm" className="flex-1">
+                      {/* Price and SKU */}
+                      <div className="space-y-1">
+                        <p className="text-lg sm:text-2xl font-bold text-emerald-600">
+                          ₹{product.price.toFixed(2)}
+                        </p>
+                        {product.sku && (
+                          <p className="text-xs sm:text-sm text-gray-500">Code: {product.sku}</p>
+                        )}
+                      </div>
+
+                      {/* Action buttons - responsive layout */}
+                      <div className="flex gap-2 pt-2">
+                        <Button asChild variant="outline" size="sm" className="flex-1 text-xs sm:text-sm">
                           <Link href={`/dashboard/products/${product.id}`}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">View</span>
+                            <span className="sm:hidden">👁</span>
                           </Link>
                         </Button>
-                        <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Button asChild variant="outline" size="sm" className="flex-1 text-xs sm:text-sm">
                           <Link href={`/dashboard/products/${product.id}/edit`}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Edit</span>
+                            <span className="sm:hidden">✏</span>
                           </Link>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </CardContent>

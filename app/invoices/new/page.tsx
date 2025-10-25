@@ -159,7 +159,7 @@ export default function NewInvoicePage() {
 
   const generateWhatsAppLink = () => {
     const amount = parseFloat(formData.amount) || 0;
-    const message = `Hello! Your invoice for $${amount.toFixed(2)} is ready. Please review and let me know if you have any questions.`;
+    const message = `Hello! Your invoice for ₹${amount.toFixed(2)} is ready. Please review and let me know if you have any questions.`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -270,7 +270,7 @@ export default function NewInvoicePage() {
                           <SelectItem value="none">No related order</SelectItem>
                           {filteredOrders.map((order) => (
                             <SelectItem key={order.id} value={order.id}>
-                              Order #{order.id.slice(-8)} - ${order.total_amount.toFixed(2)} ({order.status})
+                              Order #{order.id.slice(-8)} - ₹{order.total_amount.toFixed(2)} ({order.status})
                             </SelectItem>
                           ))}
                         </>
@@ -364,15 +364,20 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.back()}
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || customers.length === 0}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || customers.length === 0}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 order-1 sm:order-2"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

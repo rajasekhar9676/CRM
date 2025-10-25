@@ -12,7 +12,8 @@ export function ConditionalFooter() {
                     pathname?.startsWith('/customers') ||
                     pathname?.startsWith('/orders') ||
                     pathname?.startsWith('/invoices') ||
-                    pathname?.startsWith('/settings');
+                    pathname?.startsWith('/settings') ||
+                    pathname?.startsWith('/pricing');
   
   if (hideFooter) {
     return null;

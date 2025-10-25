@@ -124,67 +124,84 @@ export default function CustomersPage() {
       let errorCount = 0;
       const errors: string[] = [];
 
+      console.log('Starting import of', importData.length, 'customers');
+
       // Process each customer individually to handle duplicates
       for (const customer of importData) {
         try {
-          // Check if customer with this email already exists (if email provided)
-          if (customer.email) {
-            const { data: existingCustomer } = await supabase
+          console.log('Processing customer:', customer.name);
+          
+          // Check if customer with this email or name already exists
+          const checkField = customer.email && customer.email.trim() !== '' ? 'email' : 'name';
+          const checkValue = customer.email && customer.email.trim() !== '' ? customer.email.trim() : customer.name.trim();
+          
+          const { data: existingCustomer } = await supabase
+            .from('customers')
+            .select('id')
+            .eq(checkField, checkValue)
+            .eq('user_id', userId)
+            .single();
+
+          if (existingCustomer) {
+            // Update existing customer
+            console.log(`Updating existing customer: ${customer.name}`);
+            const { error: updateError } = await supabase
               .from('customers')
-              .select('id')
-              .eq('email', customer.email)
-              .eq('user_id', userId)
-              .single();
+              .update({
+                name: customer.name,
+                email: customer.email || null,
+                phone: customer.phone || null,
+                insta_handle: customer.insta_handle || null,
+                notes: customer.notes || null,
+                tags: customer.tags || [],
+              })
+              .eq('id', existingCustomer.id);
 
-            if (existingCustomer) {
-              // Update existing customer
-              const { error: updateError } = await supabase
-                .from('customers')
-                .update({
-                  name: customer.name,
-                  phone: customer.phone,
-                  insta_handle: customer.insta_handle,
-                  notes: customer.notes,
-                  tags: customer.tags,
-                })
-                .eq('id', existingCustomer.id);
-
-              if (updateError) {
-                errorCount++;
-                errors.push(`Failed to update customer "${customer.name}": ${updateError.message}`);
-              } else {
-                successCount++;
-              }
-              continue;
+            if (updateError) {
+              errorCount++;
+              errors.push(`Failed to update customer "${customer.name}": ${updateError.message}`);
+              console.error(`Update error for ${customer.name}:`, updateError);
+            } else {
+              successCount++;
+              console.log(`Successfully updated customer: ${customer.name}`);
             }
+            continue;
           }
 
           // Insert new customer
+          console.log(`Inserting new customer: ${customer.name}`);
           const { error: insertError } = await supabase
             .from('customers')
             .insert({
-              ...customer,
+              name: customer.name,
+              email: customer.email || null,
+              phone: customer.phone || null,
+              insta_handle: customer.insta_handle || null,
+              notes: customer.notes || null,
+              tags: customer.tags || [],
               user_id: userId,
             });
 
           if (insertError) {
-            if (insertError.code === '23505') {
-              // Duplicate key error - skip this customer
-              skipCount++;
-            } else {
-              errorCount++;
-              errors.push(`Failed to import customer "${customer.name}": ${insertError.message}`);
-            }
+            errorCount++;
+            errors.push(`Failed to import customer "${customer.name}": ${insertError.message}`);
+            console.error(`Insert error for ${customer.name}:`, insertError);
           } else {
             successCount++;
+            console.log(`Successfully imported customer: ${customer.name}`);
           }
         } catch (customerError) {
           errorCount++;
-          errors.push(`Error processing customer "${customer.name}": ${customerError}`);
+          const errorMessage = customerError instanceof Error ? customerError.message : String(customerError);
+          errors.push(`Error processing customer "${customer.name}": ${errorMessage}`);
+          console.error(`Error processing customer "${customer.name}":`, customerError);
         }
       }
 
+      console.log(`Import completed: ${successCount} success, ${skipCount} skipped, ${errorCount} errors`);
+
       // Refresh customers list
+      console.log('Refreshing customers list...');
       await fetchCustomers();
 
       // Show summary
@@ -218,34 +235,46 @@ export default function CustomersPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Customers</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Manage your customer relationships ({customers.length} customers)
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2"
+          
+          {/* Mobile-first button layout */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Primary action - always visible */}
+            <Button 
+              onClick={() => router.push('/customers/new')} 
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
             >
-              <Upload className="h-4 w-4" />
-              Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportCustomers}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button onClick={() => router.push('/customers/new')}>
               <Plus className="mr-2 h-4 w-4" />
               Add Customer
             </Button>
+            
+            {/* Secondary actions - responsive layout */}
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Import</span>
+                <span className="sm:hidden">↑</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportCustomers}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">↓</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -271,63 +300,68 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {customers.map((customer) => (
               <Card key={customer.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{customer.name}</CardTitle>
-                      <CardDescription>
-                        Added {new Date(customer.created_at).toLocaleDateString()}
-                      </CardDescription>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditCustomer(customer)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDelete(customer.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                <CardHeader className="pb-3 p-4 sm:p-6">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg truncate">{customer.name}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                          Added {new Date(customer.created_at).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex space-x-1 ml-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditCustomer(customer)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDelete(customer.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 p-4 sm:p-6 pt-0">
                   {customer.email && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{customer.email}</span>
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                      <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{customer.email}</span>
                     </div>
                   )}
                   {customer.phone && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{customer.phone}</span>
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                      <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate flex-1">{customer.phone}</span>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => generateWhatsAppLink(customer.phone!, customer.name)}
+                        className="h-6 w-6 p-0 flex-shrink-0"
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   )}
                   {customer.insta_handle && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Instagram className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                      <Instagram className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                       <a 
                         href={`https://instagram.com/${customer.insta_handle.replace('@', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 hover:underline truncate"
                       >
                         {customer.insta_handle}
                       </a>
@@ -343,7 +377,7 @@ export default function CustomersPage() {
                     </div>
                   )}
                   {customer.notes && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                       {customer.notes}
                     </p>
                   )}

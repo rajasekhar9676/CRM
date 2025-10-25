@@ -408,12 +408,12 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
-              className="flex-1"
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Cancel
@@ -421,7 +421,7 @@ export function ProductForm({ product, onSuccess, onCancel, userId }: ProductFor
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 order-1 sm:order-2"
             >
               {loading ? (
                 <>

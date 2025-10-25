@@ -132,27 +132,27 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
   };
 
   return (
-    <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 to-emerald-50">
+    <section id="pricing" className="py-12 sm:py-24 bg-gradient-to-br from-gray-50 to-emerald-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {showTitle && (
-          <div className="text-center mb-20">
+          <div className="text-center mb-12 sm:mb-20">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium mb-6">
               <Crown className="w-4 h-4 mr-2" />
               Choose Your Plan
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               Simple, transparent
               <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                 pricing for everyone
               </span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               Start free and upgrade as you grow. No hidden fees, no surprises.
             </p>
           </div>
         )}
 
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {Object.entries(SUBSCRIPTION_PLANS).map(([planKey, plan]) => {
             const planType = planKey as SubscriptionPlan;
             const isPopular = planType === 'starter';
@@ -162,7 +162,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
               <Card
                 key={planKey}
                 className={`relative transition-all duration-300 hover:shadow-2xl transform hover:-translate-y-2 ${getPlanColor(planType)} ${
-                  isPopular ? 'ring-2 ring-green-500 scale-105' : ''
+                  isPopular ? 'ring-2 ring-green-500 sm:scale-105' : ''
                 }`}
               >
                 {isPopular && (
@@ -173,7 +173,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                   </div>
                 )}
 
-                <CardHeader className="text-center pb-8">
+                <CardHeader className="text-center pb-6 px-4 sm:px-6">
                   <div className="flex justify-center mb-4">
                     <div className={`p-3 rounded-full ${
                       isPopular ? 'bg-green-100 text-green-600' : 
@@ -191,18 +191,18 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                   </CardDescription>
                   
                   <div className="mt-6">
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-5xl font-bold text-gray-900">
+                    <div className="flex items-baseline justify-center flex-wrap gap-1">
+                      <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
                         {formatPrice(plan.price)}
                       </span>
                       {plan.price > 0 && (
-                        <span className="text-gray-500 ml-2">/month</span>
+                        <span className="text-sm sm:text-base lg:text-lg text-gray-500">/month</span>
                       )}
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 px-4 sm:px-6">
                   <ul className="space-y-4">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start">
@@ -217,7 +217,7 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
                       onClick={() => handleSubscribe(planType)}
                       disabled={loading === planType}
                       variant={getButtonVariant(planType)}
-                      className={`w-full h-10 sm:h-12 text-sm sm:text-lg font-semibold ${
+                      className={`w-full h-11 sm:h-12 text-sm sm:text-base font-semibold ${
                         isPopular 
                           ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : isBusiness

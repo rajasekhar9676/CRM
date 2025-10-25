@@ -293,7 +293,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <CardContent>
                 <div className="text-center">
                   <div className="text-4xl font-bold text-emerald-600">
-                    ${product.price.toFixed(2)}
+                    ₹{product.price.toFixed(2)}
                   </div>
                   <p className="text-gray-500 mt-2">Product Price</p>
                 </div>

@@ -432,7 +432,7 @@ export default function NewOrderPage() {
                   <div className="space-y-2">
                     <Label>Total</Label>
                     <div className="flex items-center h-10 px-3 py-2 border rounded-md bg-muted">
-                      ${(item.quantity * item.price).toFixed(2)}
+                      ₹{(item.quantity * item.price).toFixed(2)}
                     </div>
                     {items.length > 1 && (
                       <Button
@@ -452,22 +452,27 @@ export default function NewOrderPage() {
               <div className="flex justify-end pt-4 border-t">
                 <div className="text-right">
                   <div className="text-2xl font-bold">
-                    Total: ${calculateTotal().toFixed(2)}
+                    Total: ₹{calculateTotal().toFixed(2)}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex justify-end space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.back()}
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || customers.length === 0}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || customers.length === 0}
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 order-1 sm:order-2"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
