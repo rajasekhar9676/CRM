@@ -166,23 +166,30 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/dashboard/products')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">{product.name}</h1>
-              <p className="text-gray-600 mt-1">Product Details</p>
+        <div className="space-y-4">
+          {/* Back Button and Title */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/dashboard/products')}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Back to Products</span>
+                <span className="sm:hidden">Back</span>
+              </Button>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{product.name}</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">Product Details</p>
+              </div>
             </div>
           </div>
+          
+          {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="flex-1 sm:flex-none">
               <Link href={`/dashboard/products/${product.id}/edit`}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -191,7 +198,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <Button
               variant="outline"
               onClick={handleDeleteProduct}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
