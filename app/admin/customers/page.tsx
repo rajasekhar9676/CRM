@@ -261,7 +261,8 @@ export default function AdminCustomersPage() {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+      </div>
+    </div>
   );
 }
 

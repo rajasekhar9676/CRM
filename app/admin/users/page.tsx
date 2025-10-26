@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -241,7 +240,8 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <AdminLayout>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -384,8 +384,9 @@ export default function AdminUsersPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
 

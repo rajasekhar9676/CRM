@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminAuthWrapper } from '@/components/admin/AdminAuthWrapper';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -130,8 +129,9 @@ export default function ManageUsersPage() {
 
   return (
     <AdminAuthWrapper>
-      <AdminLayout>
-      <div className="space-y-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Manage Users</h1>
           <Button onClick={fetchUsers} variant="outline">
@@ -291,8 +291,9 @@ export default function ManageUsersPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
+        </div>
       </div>
-      </AdminLayout>
     </AdminAuthWrapper>
   );
 }

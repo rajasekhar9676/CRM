@@ -224,7 +224,7 @@ export default function ProfilePage() {
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <p className="text-lg">
-                    {new Date(session.user.created_at || Date.now()).toLocaleDateString()}
+                    {new Date((session.user as any).created_at || Date.now()).toLocaleDateString()}
                   </p>
                 </div>
               </div>
