@@ -4,6 +4,7 @@ export interface Customer {
   name: string;
   phone?: string;
   email?: string;
+  address?: string;
   insta_handle?: string;
   notes?: string;
   tags: string[];

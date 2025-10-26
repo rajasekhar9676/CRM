@@ -25,6 +25,7 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
     name: '',
     email: '',
     phone: '',
+    address: '',
     insta_handle: '',
     notes: '',
     tags: '',
@@ -36,6 +37,7 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
         name: customer.name,
         email: customer.email || '',
         phone: customer.phone || '',
+        address: (customer as any).address || '',
         insta_handle: customer.insta_handle || '',
         notes: customer.notes || '',
         tags: customer.tags.join(', '),
@@ -68,6 +70,7 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
+          address: formData.address || null,
           insta_handle: formData.insta_handle || null,
           notes: formData.notes || null,
           tags: tagsArray,
@@ -114,9 +117,6 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
             <DialogTitle className="text-2xl font-bold">
               Edit Customer
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
@@ -169,6 +169,18 @@ export function CustomerEditModal({ customer, isOpen, onClose, onSuccess }: Cust
                 placeholder="@johndoe"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="123 Main Street, City, State, ZIP"
+              rows={3}
+            />
           </div>
 
           <div className="space-y-2">

@@ -407,9 +407,6 @@ export function InvoiceViewModal({ invoice, isOpen, onClose }: InvoiceViewModalP
               <Badge className={getStatusColor(invoice.status)}>
                 {invoice.status}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>

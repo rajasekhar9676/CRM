@@ -45,56 +45,24 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Product */}
+          {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Product</h3>
+            <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
                   Pricing
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/features" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#features" className="text-gray-300 hover:text-white transition-colors">
                   Features
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/integrations" className="text-gray-300 hover:text-white transition-colors">
-                  Integrations
-                </Link>
-              </li>
-              <li>
-                <Link href="/api" className="text-gray-300 hover:text-white transition-colors">
-                  API
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Company</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-gray-300 hover:text-white transition-colors">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-gray-300 hover:text-white transition-colors">
-                  Blog
-                </Link>
+                <a href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                  Dashboard
+                </a>
               </li>
             </ul>
           </div>
@@ -104,24 +72,29 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/privacy" className="text-gray-300 hover:text-white transition-colors">
                   Privacy Policy
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/terms" className="text-gray-300 hover:text-white transition-colors">
                   Terms & Conditions
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/shipping-policy" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/contact" className="text-gray-300 hover:text-white transition-colors">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <a href="/shipping-policy" className="text-gray-300 hover:text-white transition-colors">
                   Shipping Policy
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/cancellation-refund" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/cancellation-refund" className="text-gray-300 hover:text-white transition-colors">
                   Cancellation & Refund
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -133,17 +106,6 @@ export function Footer() {
             <p className="text-gray-400 text-sm">
               © {currentYear} BizMitra. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Terms
-              </Link>
-              <Link href="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Support
-              </Link>
-            </div>
           </div>
         </div>
       </div>

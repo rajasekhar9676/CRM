@@ -393,7 +393,7 @@ export default function NewOrderPage() {
                             >
                               <div className="font-medium">{product.name}</div>
                               <div className="text-sm text-gray-500">
-                                ${product.price} {product.sku && `• SKU: ${product.sku}`}
+                                ₹{product.price} {product.sku && `• SKU: ${product.sku}`}
                               </div>
                             </div>
                           ))}
@@ -404,7 +404,7 @@ export default function NewOrderPage() {
                     {/* Selected Product Display */}
                     {item.name && (
                       <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                        Selected: <strong>{item.name}</strong> - ${item.price}
+                        Selected: <strong>{item.name}</strong> - ₹{item.price}
                       </div>
                     )}
                   </div>

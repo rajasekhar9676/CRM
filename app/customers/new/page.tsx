@@ -20,6 +20,7 @@ export default function NewCustomerPage() {
     name: '',
     email: '',
     phone: '',
+    address: '',
     insta_handle: '',
     notes: '',
     tags: '',
@@ -52,6 +53,7 @@ export default function NewCustomerPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          address: formData.address,
           insta_handle: formData.insta_handle,
           notes: formData.notes,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
@@ -92,14 +94,19 @@ export default function NewCustomerPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Add New Customer</h1>
-            <p className="text-muted-foreground">
+        <div className="space-y-4">
+          {/* Back Button - Mobile First */}
+          <div className="flex justify-start">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          
+          {/* Title and Description */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Add New Customer</h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               Create a new customer profile
             </p>
           </div>
@@ -161,6 +168,18 @@ export default function NewCustomerPage() {
                     placeholder="@johndoe"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="123 Main Street, City, State, ZIP"
+                  rows={3}
+                />
               </div>
 
               <div className="space-y-2">

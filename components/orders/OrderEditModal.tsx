@@ -176,9 +176,6 @@ export function OrderEditModal({ order, isOpen, onClose, onSuccess }: OrderEditM
             <DialogTitle className="text-2xl font-bold">
               Edit Order
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

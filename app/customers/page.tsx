@@ -7,9 +7,10 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle, Upload, Download } from 'lucide-react';
+import { Plus, Users, Phone, Mail, Instagram, Edit, Trash2, MessageCircle, Upload, Download, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerEditModal } from '@/components/customers/CustomerEditModal';
+import { CustomerViewModal } from '@/components/customers/CustomerViewModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { SubscriptionLimits } from '@/components/subscription/SubscriptionLimits';
 import { Customer } from '@/types';
@@ -24,6 +25,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
@@ -90,6 +92,16 @@ export default function CustomersPage() {
     setIsEditModalOpen(true);
   };
 
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedCustomer(null);
+  };
+
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedCustomer(null);
@@ -104,6 +116,7 @@ export default function CustomersPage() {
       name: customer.name,
       email: customer.email || '',
       phone: customer.phone || '',
+      address: customer.address || '',
       insta_handle: customer.insta_handle || '',
       notes: customer.notes || '',
       tags: customer.tags.join(', ') || '',
@@ -151,6 +164,7 @@ export default function CustomersPage() {
                 name: customer.name,
                 email: customer.email || null,
                 phone: customer.phone || null,
+                address: customer.address || null,
                 insta_handle: customer.insta_handle || null,
                 notes: customer.notes || null,
                 tags: customer.tags || [],
@@ -176,6 +190,7 @@ export default function CustomersPage() {
               name: customer.name,
               email: customer.email || null,
               phone: customer.phone || null,
+              address: customer.address || null,
               insta_handle: customer.insta_handle || null,
               notes: customer.notes || null,
               tags: customer.tags || [],
@@ -316,8 +331,18 @@ export default function CustomersPage() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => handleViewCustomer(customer)}
+                          className="h-8 w-8 p-0"
+                          title="View Details"
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
                           onClick={() => handleEditCustomer(customer)}
                           className="h-8 w-8 p-0"
+                          title="Edit"
                         >
                           <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -326,6 +351,7 @@ export default function CustomersPage() {
                           size="sm"
                           onClick={() => handleDelete(customer.id)}
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          title="Delete"
                         >
                           <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -386,6 +412,13 @@ export default function CustomersPage() {
             ))}
           </div>
         )}
+
+        {/* Customer View Modal */}
+        <CustomerViewModal
+          customer={selectedCustomer}
+          isOpen={isViewModalOpen}
+          onClose={handleCloseViewModal}
+        />
 
         {/* Customer Edit Modal */}
         <CustomerEditModal

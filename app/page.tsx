@@ -149,33 +149,42 @@ export default function HomePage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg shadow-sm border-b border-emerald-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
+          <div className="flex items-center justify-between h-20">
+            {/* Mobile Menu - Left Side */}
+            <div className="md:hidden">
+              <button
+                className="p-2 rounded-lg text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+
+            {/* Logo - Center */}
+            <Link href="/" className="flex items-center justify-center flex-1 md:flex-none">
               <img 
                 src="/images/bizmitra-logo.png" 
                 alt="BizMitra Logo" 
-                className="h-20 w-auto"
+                className="h-16 md:h-20 w-auto"
               />
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
-              <a href="#comparison" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Excel vs Software</a>
               <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
               <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
-              <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
             </div>
 
-            {/* Auth Buttons */}
-            <div className="flex items-center space-x-4">
+            {/* Auth Buttons - Right Side */}
+            <div className="flex items-center space-x-2 md:space-x-4">
               {session ? (
                 <Button 
                   onClick={() => router.push('/dashboard')}
-                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 text-sm md:text-base"
                 >
-                  Go to Dashboard
+                  <span className="hidden sm:inline">Go to Dashboard</span>
+                  <span className="sm:hidden">Dashboard</span>
                 </Button>
               ) : (
                 <>
@@ -207,14 +216,6 @@ export default function HomePage() {
                   </div>
                 </>
               )}
-              
-              {/* Mobile menu button */}
-              <button
-                className="md:hidden p-2 rounded-lg text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
 
@@ -222,11 +223,9 @@ export default function HomePage() {
           {isMobileMenuOpen && (
             <div className="md:hidden py-4 border-t border-emerald-100">
               <div className="flex flex-col space-y-2">
-                <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Home</a>
-                <a href="#comparison" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Excel vs Software</a>
-                <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Features</a>
-                <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Pricing</a>
-                <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium">Contact</a>
+                <a href="#home" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Home</a>
+                <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
+                <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors px-4 py-3 rounded-lg hover:bg-emerald-50 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</a>
               </div>
             </div>
           )}
@@ -768,24 +767,6 @@ export default function HomePage() {
                 />
               </svg>
               Get Started Free
-            </Button>
-            <Button 
-              onClick={handleDemoMode}
-              variant="outline"
-              size="lg"
-              className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 px-6 sm:px-10 py-3 sm:py-4 text-lg sm:text-xl font-semibold transition-all duration-300 w-full sm:w-auto"
-            >
-              {isDemoLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 animate-spin" />
-                  Loading Demo...
-                </>
-              ) : (
-                <>
-                  <Smartphone className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
-                  Try Demo Mode
-                </>
-              )}
             </Button>
           </div>
           

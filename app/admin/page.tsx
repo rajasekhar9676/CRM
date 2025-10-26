@@ -10,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Edit, Save, X, User, Mail, Shield, Crown, RefreshCw, Database, Users, FileText, DollarSign, TrendingUp, Download, Plus } from 'lucide-react';
+import { Search, Edit, Save, X, User, Mail, Shield, Crown, RefreshCw, Database, Users, FileText, DollarSign, TrendingUp, Download, Plus, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { UserDataView } from '@/components/admin/UserDataView';
 
 interface User {
   id: string;
@@ -69,6 +70,7 @@ export default function AdminPage() {
   // Data states
   const [users, setUsers] = useState<User[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   
@@ -87,6 +89,8 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editData, setEditData] = useState<EditUserData>({ email: '', name: '', role: 'user' });
   const [saving, setSaving] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [viewingUserData, setViewingUserData] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -137,6 +141,7 @@ export default function AdminPage() {
       await Promise.all([
         fetchUsers(),
         fetchCustomers(),
+        fetchOrders(),
         fetchInvoices(),
         fetchProducts()
       ]);
@@ -172,15 +177,35 @@ export default function AdminPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const formattedCustomers = data?.map(customer => ({
         ...customer,
         user_email: customer.users?.email || '',
       })) || [];
-      
+
       setCustomers(formattedCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          users!orders_user_id_fkey (
+            email
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
     }
   };
 
@@ -202,6 +227,7 @@ export default function AdminPage() {
         ...invoice,
         user_email: invoice.users?.email || '',
         customer_name: invoice.customer_name || 'Unknown Customer',
+        invoice_number: `INV-${invoice.id.slice(0, 8).toUpperCase()}`,
       })) || [];
       
       setInvoices(formattedInvoices);
@@ -356,10 +382,15 @@ export default function AdminPage() {
     (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-const filteredInvoices = invoices.filter(invoice =>
-  (invoice.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (invoice.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const filteredOrders = orders.filter(order =>
+    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.status || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredInvoices = invoices.filter(invoice =>
+    (invoice.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (invoice.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const filteredProducts = products.filter(product =>
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -439,54 +470,70 @@ const filteredInvoices = invoices.filter(invoice =>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r flex flex-col h-screen sticky top-0">
+        {/* Logo/Header */}
+        <div className="p-6 border-b">
+          <div className="flex items-center space-x-2">
+            <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
             </div>
-            <div className="flex items-center space-x-4">
-              <Button onClick={fetchAllData} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+            <div>
+              <h2 className="font-bold text-lg">Admin Panel</h2>
+              <p className="text-xs text-gray-500">BizMitra</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
-              { id: 'users', label: 'Users', icon: Users },
-              { id: 'customers', label: 'Customers', icon: User },
-              { id: 'invoices', label: 'Invoices', icon: FileText },
-              { id: 'products', label: 'Products', icon: DollarSign },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-1 py-4 text-sm font-medium border-b-2 ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="h-4 w-4 mr-2" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
+            { id: 'users', label: 'Users', icon: Users },
+            { id: 'customers', label: 'Customers', icon: User },
+            { id: 'orders', label: 'Orders', icon: ShoppingCart },
+            { id: 'invoices', label: 'Invoices', icon: FileText },
+            { id: 'products', label: 'Products', icon: DollarSign },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <tab.icon className="h-5 w-5" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Refresh Button */}
+        <div className="p-4 border-t">
+          <Button onClick={fetchAllData} variant="outline" className="w-full">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="bg-white shadow-sm border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-sm text-gray-500 mt-1">Monitor and manage your platform</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-6">
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
@@ -567,14 +614,14 @@ const filteredInvoices = invoices.filter(invoice =>
                     {invoices.slice(0, 5).map((invoice) => (
                       <div key={invoice.id} className="flex items-center">
                         <div className="h-9 w-9 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-semibold">
-                          {invoice.invoice_number.charAt(0)}
+                          {invoice.invoice_number?.charAt(0) || invoice.id.charAt(0)}
                         </div>
                         <div className="ml-4 space-y-1">
-                          <p className="text-sm font-medium leading-none">{invoice.invoice_number}</p>
+                          <p className="text-sm font-medium leading-none">{invoice.invoice_number || `Invoice #${invoice.id.slice(0, 8)}`}</p>
                           <p className="text-sm text-muted-foreground">{invoice.customer_name}</p>
                         </div>
                         <div className="ml-auto font-medium text-sm text-gray-500">
-                          ${invoice.total_amount}
+                          ₹{invoice.total_amount}
                         </div>
                       </div>
                     ))}
@@ -649,6 +696,17 @@ const filteredInvoices = invoices.filter(invoice =>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setViewingUserData(true);
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          View Data
+                        </Button>
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button 
@@ -798,6 +856,59 @@ const filteredInvoices = invoices.filter(invoice =>
           </Card>
         )}
 
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Manage Orders ({filteredOrders.length})</CardTitle>
+                  <CardDescription>View and manage all order records</CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Search orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredOrders.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No orders found</p>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <div key={order.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                              {order.id.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg">Order #{order.id.slice(0, 8)}</h3>
+                              <p className="text-sm text-gray-500">
+                                Total: ₹{order.total_amount} | Status: {order.status}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Created: {new Date(order.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant="outline">{order.status}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Invoices Tab */}
         {activeTab === 'invoices' && (
           <Card>
@@ -829,13 +940,13 @@ const filteredInvoices = invoices.filter(invoice =>
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold">
-                            {invoice.invoice_number.charAt(0)}
+                            {invoice.invoice_number?.charAt(0) || invoice.id.charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{invoice.invoice_number}</h3>
+                            <h3 className="font-semibold text-lg">{invoice.invoice_number || `Invoice #${invoice.id.slice(0, 8)}`}</h3>
                             <p className="text-gray-600">{invoice.customer_name}</p>
                             <p className="text-sm text-gray-500">
-                              Amount: ${invoice.total_amount} | Status: {invoice.status}
+                              Amount: ₹{invoice.total_amount} | Status: {invoice.status}
                             </p>
                             <p className="text-sm text-gray-500">
                               Owner: {invoice.user_email} | Created: {new Date(invoice.created_at).toLocaleDateString()}
@@ -843,7 +954,7 @@ const filteredInvoices = invoices.filter(invoice =>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                              ${invoice.total_amount}
+                              ₹{invoice.total_amount}
                             </div>
                             <Badge variant="outline">{invoice.status}</Badge>
                           </div>
@@ -894,7 +1005,7 @@ const filteredInvoices = invoices.filter(invoice =>
                             <h3 className="font-semibold text-lg">{product.name}</h3>
                             <p className="text-gray-600">Category: {product.category}</p>
                             <p className="text-sm text-gray-500">
-                              Price: ${product.price} | Owner: {product.user_email}
+                              Price: ₹{product.price} | Owner: {product.user_email}
                             </p>
                             <p className="text-sm text-gray-500">
                               Created: {new Date(product.created_at).toLocaleDateString()}
@@ -902,7 +1013,7 @@ const filteredInvoices = invoices.filter(invoice =>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-blue-600">
-                              ${product.price}
+                              ₹{product.price}
                             </div>
                             <Badge variant="outline">{product.category}</Badge>
                           </div>
@@ -915,7 +1026,19 @@ const filteredInvoices = invoices.filter(invoice =>
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
+
+      {/* User Data Viewing Modal */}
+      {selectedUser && viewingUserData && (
+        <UserDataView 
+          user={selectedUser}
+          onClose={() => {
+            setViewingUserData(false);
+            setSelectedUser(null);
+          }}
+        />
+      )}
     </div>
   );
 }
