@@ -149,7 +149,7 @@ async function handleSubscriptionCancelled(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'canceled',
