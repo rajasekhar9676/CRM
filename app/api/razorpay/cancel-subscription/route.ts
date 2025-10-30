@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { cancelRazorpaySubscription } from '@/lib/razorpay';
 
 export async function POST(request: NextRequest) {
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the subscription belongs to the user
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')

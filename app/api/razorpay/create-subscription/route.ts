@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SubscriptionPlan } from '@/types';
 import { createRazorpaySubscription, RAZORPAY_PLANS } from '@/lib/razorpay';
 
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Get user details from Supabase
     console.log('🔍 Fetching user from database...');
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')

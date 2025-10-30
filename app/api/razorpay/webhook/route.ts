@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifyRazorpayWebhookSignature } from '@/lib/razorpay';
 
 export async function POST(request: NextRequest) {
@@ -73,7 +73,7 @@ async function handleSubscriptionActivated(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'active',
@@ -104,7 +104,7 @@ async function handleSubscriptionCharged(subscriptionData: any, paymentData: any
 
     // Update subscription status to active if payment is successful
     if (paymentData.status === 'captured') {
-      const { error } = await supabaseAdmin
+      const { error } = await getSupabaseAdmin()
         .from('subscriptions')
         .update({
           status: 'active',
@@ -126,7 +126,7 @@ async function handleSubscriptionCompleted(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'canceled',
@@ -149,7 +149,7 @@ async function handleSubscriptionCancelled(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'canceled',
@@ -173,7 +173,7 @@ async function handleSubscriptionPaused(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'past_due',
@@ -196,7 +196,7 @@ async function handleSubscriptionResumed(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'active',
@@ -219,7 +219,7 @@ async function handleSubscriptionPending(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'pending',
@@ -242,7 +242,7 @@ async function handleSubscriptionHalted(data: any) {
     const { id } = data;
     
     // Update subscription in database
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'past_due',
