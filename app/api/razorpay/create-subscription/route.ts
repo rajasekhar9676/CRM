@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { SubscriptionPlan } from '@/types';
 import { createRazorpaySubscription, RAZORPAY_PLANS } from '@/lib/razorpay';
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Get user details from Supabase
     console.log('🔍 Fetching user from database...');
-    const { data: user, error: userError } = await supabase
+    const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', (session.user as any).id)
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a Razorpay customer ID stored
-    const { data: existingSubscription } = await supabase
+    const { data: existingSubscription } = await supabaseAdmin
       .from('subscriptions')
       .select('razorpay_customer_id')
       .eq('user_id', user.id)
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ Razorpay subscription created:', subscription);
 
       // Store subscription details in database
-      const { error: subscriptionError } = await supabase
+      const { error: subscriptionError } = await supabaseAdmin
         .from('subscriptions')
         .upsert({
           user_id: user.id,

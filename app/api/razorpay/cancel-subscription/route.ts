@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { cancelRazorpaySubscription } from '@/lib/razorpay';
 
 export async function POST(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the subscription belongs to the user
-    const { data: subscription, error: subscriptionError } = await supabase
+    const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', (session.user as any).id)
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Update subscription in database
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
           status: cancelAtCycleEnd ? 'active' : 'canceled',
