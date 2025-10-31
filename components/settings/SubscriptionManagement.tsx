@@ -26,12 +26,14 @@ export function SubscriptionManagement() {
       });
 
       const data = await response.json();
+      console.log('[Settings] Razorpay subscription response:', data);
 
-      if (data.shortUrl) {
+      if (response.ok && data.shortUrl) {
         window.location.href = data.shortUrl;
-      } else {
-        throw new Error(data.error || 'Failed to create subscription');
+        return;
       }
+
+      throw new Error(data.error || 'Failed to create subscription');
     } catch (error) {
       console.error('Error creating subscription:', error);
       toast({

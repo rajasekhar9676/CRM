@@ -49,23 +49,23 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No subscription found, return free plan
-        return {
-          plan: 'free',
-          status: 'active',
-          currentPeriodStart: new Date().toISOString(),
-          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
-          cancelAtPeriodEnd: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      }
       console.error('Error fetching subscription:', error);
       return null;
+    }
+
+    if (!data) {
+      return {
+        plan: 'free',
+        status: 'active',
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+        cancelAtPeriodEnd: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
     }
 
     return data as Subscription;
@@ -88,7 +88,7 @@ export async function updateSubscription(
       })
       .eq('user_id', userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating subscription:', error);

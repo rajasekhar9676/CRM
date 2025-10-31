@@ -49,11 +49,15 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
       });
 
       const data = await response.json();
+      console.log('[Pricing] Razorpay subscription response:', data);
 
-      if (data.shortUrl) {
+      if (response.ok && data.shortUrl) {
         // Redirect to Razorpay payment page
         window.location.href = data.shortUrl;
-      } else if (data.setupRequired) {
+        return;
+      }
+
+      if (data.setupRequired) {
         toast({
           title: "Setup Required",
           description: "Razorpay payment integration needs to be configured. Please contact support.",
@@ -75,6 +79,12 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
         toast({
           title: "Connection Error",
           description: "Failed to connect to payment gateway. Please check your internet connection.",
+          variant: "destructive",
+        });
+      } else if (!response.ok) {
+        toast({
+          title: "Payment Error",
+          description: data.error || 'Failed to create subscription with Razorpay. Please try again.',
           variant: "destructive",
         });
       } else {
