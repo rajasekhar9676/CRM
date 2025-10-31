@@ -67,18 +67,45 @@ export async function createRazorpaySubscription(
       },
     };
 
-    // If customer doesn't exist, create one
-    if (!customerDetails.customerId) {
-      const customer = await razorpay.customers.create({
-        name: customerDetails.customerName,
-        email: customerDetails.customerEmail,
-        contact: customerDetails.customerPhone,
-        fail_existing: 0, // Don't fail if customer already exists
-      });
-      subscriptionData.customer_id = customer.id;
-    } else {
-      subscriptionData.customer_id = customerDetails.customerId;
+    let customerId = customerDetails.customerId;
+
+    // If customer doesn't exist, create one (or reuse existing)
+    if (!customerId) {
+      try {
+        const customer = await razorpay.customers.create({
+          name: customerDetails.customerName,
+          email: customerDetails.customerEmail,
+          contact: customerDetails.customerPhone,
+          fail_existing: 0,
+        });
+        customerId = customer.id;
+      } catch (error: any) {
+        const description: string | undefined = error?.error?.description || error?.message;
+        if (description && description.toLowerCase().includes('customer already exists')) {
+          const existingCustomers = await razorpay.customers.all({
+            email: customerDetails.customerEmail,
+            contact: customerDetails.customerPhone,
+            count: 1,
+          });
+
+          const existingCustomer = existingCustomers?.items?.[0];
+
+          if (existingCustomer?.id) {
+            customerId = existingCustomer.id;
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      }
     }
+
+    if (!customerId) {
+      throw new Error('Unable to determine Razorpay customer ID for subscription');
+    }
+
+    subscriptionData.customer_id = customerId;
 
     const subscription = await razorpay.subscriptions.create(subscriptionData);
     return subscription;
