@@ -111,23 +111,30 @@ export async function POST(request: NextRequest) {
       // Store subscription details in database
       const { error: subscriptionError } = await supabaseAdmin
         .from('subscriptions')
-        .upsert({
-          user_id: user.id,
-          plan: plan as SubscriptionPlan,
-          status: 'created',
-          razorpay_subscription_id: subscription.id,
-          razorpay_customer_id: subscription.customer_id,
-          current_period_start: new Date(subscription.start_at * 1000).toISOString(),
-          current_period_end: new Date(subscription.end_at * 1000).toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            plan: plan as SubscriptionPlan,
+            status: 'created',
+            razorpay_subscription_id: subscription.id,
+            razorpay_customer_id: subscription.customer_id,
+            current_period_start: new Date(subscription.start_at * 1000).toISOString(),
+            current_period_end: new Date(subscription.end_at * 1000).toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
 
       if (subscriptionError) {
         console.error('Error storing subscription:', subscriptionError);
         return NextResponse.json(
           { 
-            error: 'Database error. Please run the SQL script to create the subscriptions table.',
+            error: 'Database error while saving subscription',
+            details: subscriptionError.message,
+            code: subscriptionError.code,
             databaseError: true
           },
           { status: 500 }

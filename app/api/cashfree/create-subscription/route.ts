@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SubscriptionPlan } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
 
     // Get user details from Supabase
     console.log('🔍 Fetching user from database...');
-    const { data: user, error: userError } = await supabase
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', (session.user as any).id)
@@ -159,22 +160,29 @@ export async function POST(request: NextRequest) {
       }
 
       // Store subscription details in database
-      const { error: subscriptionError } = await supabase
+      const { error: subscriptionError } = await supabaseAdmin
         .from('subscriptions')
-        .upsert({
-          user_id: user.id,
-          plan: plan as SubscriptionPlan,
-          status: 'pending',
-          cashfree_subscription_id: subscriptionId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            plan: plan as SubscriptionPlan,
+            status: 'pending',
+            cashfree_subscription_id: subscriptionId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
 
       if (subscriptionError) {
         console.error('Error storing subscription:', subscriptionError);
         return NextResponse.json(
           { 
-            error: 'Database error. Please run the SQL script to create the subscriptions table.',
+            error: 'Database error while saving subscription',
+            details: subscriptionError.message,
+            code: subscriptionError.code,
             databaseError: true
           },
           { status: 500 }

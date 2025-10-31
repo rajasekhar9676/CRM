@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -66,7 +66,7 @@ async function handleSubscriptionActivated(data: any) {
     const { subscriptionId } = data;
     
     // Update subscription in database
-    const { error } = await supabase
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'active',
@@ -89,7 +89,7 @@ async function handleSubscriptionCancelled(data: any) {
     const { subscriptionId } = data;
     
     // Update subscription in database
-    const { error } = await supabase
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'canceled',
@@ -112,7 +112,7 @@ async function handleSubscriptionPaused(data: any) {
     const { subscriptionId } = data;
     
     // Update subscription in database
-    const { error } = await supabase
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'past_due',
@@ -135,7 +135,7 @@ async function handleSubscriptionResumed(data: any) {
     const { subscriptionId } = data;
     
     // Update subscription in database
-    const { error } = await supabase
+    const { error } = await getSupabaseAdmin()
       .from('subscriptions')
       .update({
         status: 'active',
