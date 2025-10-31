@@ -36,21 +36,26 @@ export async function POST(request: NextRequest) {
     // Get user details from Supabase
     console.log('🔍 Fetching user from database...');
     const supabaseAdmin = getSupabaseAdmin();
-    const { data: user, error: userError } = await supabaseAdmin
+    const userId = (session.user as any).id;
+
+    const { data: userRecord, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('id', (session.user as any).id)
-      .single();
+      .eq('id', userId)
+      .maybeSingle();
 
-    console.log('🔍 User query result:', { user, userError });
-
-    if (userError || !user) {
-      console.log('❌ User not found:', userError);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    if (userError && userError.code !== 'PGRST116') {
+      console.warn('⚠️ Error fetching user record:', userError);
     }
+
+    const user = userRecord || {
+      id: userId,
+      name: session.user.name || 'User',
+      email: session.user.email,
+      phone_number: (session.user as any).phone_number || (session.user as any).phone || '9999999999',
+    };
+
+    console.log('🔍 Using user data:', user);
 
     // Check if Razorpay environment variables are configured
     console.log('🔍 Checking Razorpay environment variables...');
@@ -83,11 +88,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a Razorpay customer ID stored
-    const { data: existingSubscription } = await supabaseAdmin
+    const { data: existingSubscription, error: existingSubscriptionError } = await supabaseAdmin
       .from('subscriptions')
       .select('razorpay_customer_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (existingSubscriptionError && existingSubscriptionError.code !== 'PGRST116') {
+      console.warn('⚠️ Error fetching existing subscription:', existingSubscriptionError);
+    }
 
     // Create Razorpay subscription
     try {
@@ -108,6 +117,15 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ Razorpay subscription created:', subscription);
 
+      // Normalize status & period timestamps for storage
+      const normalizedStatus = subscription.status === 'created' ? 'pending' : subscription.status;
+      const periodStart = subscription.start_at
+        ? new Date(subscription.start_at * 1000).toISOString()
+        : new Date().toISOString();
+      const periodEnd = subscription.end_at
+        ? new Date(subscription.end_at * 1000).toISOString()
+        : new Date().toISOString();
+
       // Store subscription details in database
       const { error: subscriptionError } = await supabaseAdmin
         .from('subscriptions')
@@ -115,11 +133,11 @@ export async function POST(request: NextRequest) {
           {
             user_id: user.id,
             plan: plan as SubscriptionPlan,
-            status: 'created',
+            status: normalizedStatus,
             razorpay_subscription_id: subscription.id,
             razorpay_customer_id: subscription.customer_id,
-            current_period_start: new Date(subscription.start_at * 1000).toISOString(),
-            current_period_end: new Date(subscription.end_at * 1000).toISOString(),
+            current_period_start: periodStart,
+            current_period_end: periodEnd,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },

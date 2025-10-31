@@ -35,21 +35,26 @@ export async function POST(request: NextRequest) {
     // Get user details from Supabase
     console.log('🔍 Fetching user from database...');
     const supabaseAdmin = getSupabaseAdmin();
-    const { data: user, error: userError } = await supabaseAdmin
+    const userId = (session.user as any).id;
+
+    const { data: userRecord, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('id', (session.user as any).id)
-      .single();
+      .eq('id', userId)
+      .maybeSingle();
 
-    console.log('🔍 User query result:', { user, userError });
-
-    if (userError || !user) {
-      console.log('❌ User not found:', userError);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    if (userError && userError.code !== 'PGRST116') {
+      console.warn('⚠️ Error fetching user record:', userError);
     }
+
+    const user = userRecord || {
+      id: userId,
+      name: session.user.name || 'User',
+      email: session.user.email,
+      phone_number: (session.user as any).phone_number || (session.user as any).phone || '9999999999',
+    };
+
+    console.log('🔍 Using user data:', user);
 
     // Check if Cashfree environment variables are configured
     console.log('🔍 Checking Cashfree environment variables...');

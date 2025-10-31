@@ -82,13 +82,17 @@ export async function createRazorpaySubscription(
       } catch (error: any) {
         const description: string | undefined = error?.error?.description || error?.message;
         if (description && description.toLowerCase().includes('customer already exists')) {
-          const existingCustomers = await razorpay.customers.all({
-            email: customerDetails.customerEmail,
-            contact: customerDetails.customerPhone,
-            count: 1,
+          const existingCustomerList = await razorpay.customers.all({
+            count: 100,
+            skip: 0,
           });
 
-          const existingCustomer = existingCustomers?.items?.[0];
+          const existingCustomer = existingCustomerList?.items?.find((item: any) => {
+            return (
+              item?.email?.toLowerCase() === customerDetails.customerEmail?.toLowerCase() ||
+              item?.contact === customerDetails.customerPhone
+            );
+          });
 
           if (existingCustomer?.id) {
             customerId = existingCustomer.id;
