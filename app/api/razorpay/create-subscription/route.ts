@@ -116,6 +116,29 @@ export async function POST(request: NextRequest) {
       );
 
       console.log('✅ Razorpay subscription created:', subscription);
+      console.log('🔍 Subscription short_url:', subscription.short_url);
+      console.log('🔍 Subscription short_url type:', typeof subscription.short_url);
+      console.log('🔍 Full subscription response:', JSON.stringify(subscription, null, 2));
+      console.log('🔍 All subscription fields:', Object.keys(subscription));
+
+      // Check if short_url exists
+      if (!subscription.short_url) {
+        console.error('❌ Razorpay subscription created but short_url is missing!');
+        console.error('❌ This usually means hosted checkout is not enabled in your Razorpay account.');
+        console.error('❌ Full subscription response:', JSON.stringify(subscription, null, 2));
+        
+        return NextResponse.json(
+          { 
+            error: 'Razorpay hosted checkout is not enabled',
+            details: 'The subscription was created but Razorpay did not return a checkout URL. This usually means hosted checkout is disabled in your Razorpay account settings. Please enable Subscriptions > Hosted Checkout in your Razorpay dashboard, or contact Razorpay support to activate it.',
+            razorpayError: true,
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            missingShortUrl: true
+          },
+          { status: 400 }
+        );
+      }
 
       // Normalize status & period timestamps for storage
       const normalizedStatus = subscription.status === 'created' ? 'pending' : subscription.status;
@@ -125,6 +148,21 @@ export async function POST(request: NextRequest) {
       const periodEnd = subscription.end_at
         ? new Date(subscription.end_at * 1000).toISOString()
         : new Date().toISOString();
+      
+      // Capture next due date from Razorpay (charge_at or current_end)
+      // charge_at is the timestamp for the next charge
+      // current_end is the end of current billing cycle (next billing date)
+      const nextDueDate = subscription.charge_at
+        ? new Date(subscription.charge_at * 1000).toISOString()
+        : subscription.current_end
+        ? new Date(subscription.current_end * 1000).toISOString()
+        : periodEnd; // Fallback to periodEnd if neither is available
+
+      console.log('📅 Next Due Date from Razorpay:', {
+        charge_at: subscription.charge_at,
+        current_end: subscription.current_end,
+        next_due_date: nextDueDate,
+      });
 
       // Store subscription details in database
       const { error: subscriptionError } = await supabaseAdmin
@@ -138,6 +176,7 @@ export async function POST(request: NextRequest) {
             razorpay_customer_id: subscription.customer_id,
             current_period_start: periodStart,
             current_period_end: periodEnd,
+            next_due_date: nextDueDate,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -158,6 +197,29 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Validate short_url format before returning
+      if (!subscription.short_url || !subscription.short_url.startsWith('https://rzp.io/')) {
+        console.error('❌ Invalid short_url format:', subscription.short_url);
+        return NextResponse.json(
+          { 
+            error: 'Invalid checkout URL format from Razorpay',
+            details: `Expected URL starting with 'https://rzp.io/' but got: ${subscription.short_url || 'undefined'}`,
+            razorpayError: true,
+            subscriptionId: subscription.id
+          },
+          { status: 500 }
+        );
+      }
+
+      // Log exactly what we're returning
+      console.log('🚀 Returning shortUrl to frontend:', subscription.short_url);
+      console.log('🚀 Full response payload:', {
+        subscriptionId: subscription.id,
+        customerId: subscription.customer_id,
+        status: subscription.status,
+        shortUrl: subscription.short_url,
+      });
 
       // Return success response with Razorpay data
       return NextResponse.json({

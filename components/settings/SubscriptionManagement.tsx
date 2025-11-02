@@ -26,10 +26,42 @@ export function SubscriptionManagement() {
       });
 
       const data = await response.json();
-      console.log('[Settings] Razorpay subscription response:', data);
+      console.log('[Settings] Full Razorpay subscription response:', data);
+      console.log('[Settings] data.shortUrl value:', data.shortUrl);
+      console.log('[Settings] data.shortUrl type:', typeof data.shortUrl);
+      console.log('[Settings] data.shortUrl starts with https://rzp.io/?', data.shortUrl?.startsWith('https://rzp.io/'));
 
       if (response.ok && data.shortUrl) {
-        window.location.href = data.shortUrl;
+        // Validate shortUrl format before redirecting
+        const shortUrl = data.shortUrl.trim();
+        console.log('[Settings] Trimmed shortUrl:', shortUrl);
+        
+        if (!shortUrl.startsWith('https://rzp.io/')) {
+          console.error('[Settings] ❌ Invalid shortUrl format!');
+          console.error('[Settings] Expected: https://rzp.io/rzp/xxxxx');
+          console.error('[Settings] Got:', shortUrl);
+          console.error('[Settings] Full response data:', JSON.stringify(data, null, 2));
+          
+          toast({
+            title: "Invalid Checkout URL",
+            description: `The payment gateway returned an invalid checkout URL: ${shortUrl}. Expected URL starting with 'https://rzp.io/'. Please check Razorpay settings.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('[Settings] ✅ Valid shortUrl, redirecting to:', shortUrl);
+        window.location.href = shortUrl;
+        return;
+      }
+
+      // Handle missing shortUrl case
+      if (response.ok && data.missingShortUrl) {
+        toast({
+          title: "Hosted Checkout Not Enabled",
+          description: data.details || "Razorpay hosted checkout is not enabled. Please contact Razorpay support to activate it.",
+          variant: "destructive",
+        });
         return;
       }
 

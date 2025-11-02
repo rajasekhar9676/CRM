@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Edit, Save, X, User, Mail, Shield, Crown, RefreshCw, Database, Users, FileText, DollarSign, TrendingUp, Download, Plus, ShoppingCart } from 'lucide-react';
+import { Search, Edit, Save, X, User, Mail, Shield, Crown, RefreshCw, Database, Users, FileText, DollarSign, TrendingUp, Download, Plus, ShoppingCart, MessageSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { UserDataView } from '@/components/admin/UserDataView';
@@ -73,6 +73,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
   
   // Stats
   const [stats, setStats] = useState({
@@ -136,6 +137,44 @@ export default function AdminPage() {
     }
   };
 
+  const fetchContacts = async () => {
+    try {
+      console.log('🔍 Fetching contacts via API...');
+      
+      // Use API route (server-side) which has access to service role key
+      const response = await fetch('/api/admin/contacts', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Error fetching contacts:', result);
+        toast({
+          title: "Error Fetching Contacts",
+          description: result.error || "Failed to fetch contact submissions.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Contacts fetched:', result.count || 0);
+      console.log('✅ Sample data:', result.contacts?.slice(0, 1));
+      
+      setContacts(result.contacts || []);
+    } catch (error: any) {
+      console.error('❌ Exception fetching contacts:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to fetch contacts. Check console for details.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchAllData = async () => {
     try {
       await Promise.all([
@@ -143,7 +182,8 @@ export default function AdminPage() {
         fetchCustomers(),
         fetchOrders(),
         fetchInvoices(),
-        fetchProducts()
+        fetchProducts(),
+        fetchContacts()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -397,6 +437,12 @@ export default function AdminPage() {
     (product.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredContacts = contacts.filter(contact =>
+    (contact.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (contact.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (contact.subject || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -495,6 +541,7 @@ export default function AdminPage() {
             { id: 'orders', label: 'Orders', icon: ShoppingCart },
             { id: 'invoices', label: 'Invoices', icon: FileText },
             { id: 'products', label: 'Products', icon: DollarSign },
+            { id: 'contacts', label: 'Contacts', icon: MessageSquare },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -512,10 +559,44 @@ export default function AdminPage() {
         </nav>
 
         {/* Refresh Button */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t space-y-2">
           <Button onClick={fetchAllData} variant="outline" className="w-full">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
+          </Button>
+          <Button 
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/admin/sync-subscriptions', {
+                  method: 'POST',
+                });
+                const data = await response.json();
+                if (response.ok) {
+                  toast({
+                    title: "Subscriptions Synced",
+                    description: `Successfully synced ${data.synced} subscriptions from Razorpay.${data.failed > 0 ? ` ${data.failed} failed.` : ''}`,
+                  });
+                  fetchAllData(); // Refresh to show updated data
+                } else {
+                  toast({
+                    title: "Sync Failed",
+                    description: data.error || "Failed to sync subscriptions.",
+                    variant: "destructive",
+                  });
+                }
+              } catch (error: any) {
+                toast({
+                  title: "Error",
+                  description: error.message || "Failed to sync subscriptions.",
+                  variant: "destructive",
+                });
+              }
+            }} 
+            variant="outline" 
+            className="w-full text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-2" />
+            Sync Subscriptions
           </Button>
         </div>
       </div>
@@ -1022,6 +1103,133 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contacts Tab */}
+        {activeTab === 'contacts' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Contact Form Submissions ({filteredContacts.length})</CardTitle>
+                  <CardDescription>View and manage contact form submissions from website visitors</CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Search contacts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredContacts.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No contact submissions found</p>
+                ) : (
+                  filteredContacts.map((contact) => (
+                    <div key={contact.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold">
+                              {contact.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg">{contact.name}</h3>
+                              <p className="text-sm text-gray-600">{contact.email}</p>
+                              {contact.phone && (
+                                <p className="text-sm text-gray-500">{contact.phone}</p>
+                              )}
+                            </div>
+                            <Badge 
+                              variant={
+                                contact.status === 'new' ? 'default' :
+                                contact.status === 'read' ? 'secondary' :
+                                contact.status === 'replied' ? 'outline' : 'secondary'
+                              }
+                            >
+                              {contact.status}
+                            </Badge>
+                          </div>
+                          {contact.subject && (
+                            <div className="mt-3 mb-2">
+                              <p className="font-medium text-gray-900">Subject: {contact.subject}</p>
+                            </div>
+                          )}
+                          <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.message}</p>
+                          </div>
+                          <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                            <span>Submitted: {new Date(contact.created_at).toLocaleString()}</span>
+                            {contact.updated_at && contact.updated_at !== contact.created_at && (
+                              <span>Updated: {new Date(contact.updated_at).toLocaleString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Select
+                            value={contact.status}
+                            onValueChange={async (newStatus) => {
+                              try {
+                                // Use regular supabase client (admin user has access via RLS)
+                                const { error } = await supabase
+                                  .from('contacts')
+                                  .update({ 
+                                    status: newStatus,
+                                    updated_at: new Date().toISOString()
+                                  })
+                                  .eq('id', contact.id);
+                                
+                                if (error) throw error;
+                                
+                                toast({
+                                  title: "Status Updated",
+                                  description: `Contact status updated to ${newStatus}`,
+                                });
+                                
+                                fetchContacts();
+                              } catch (error) {
+                                console.error('Error updating contact status:', error);
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to update contact status",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="read">Read</SelectItem>
+                              <SelectItem value="replied">Replied</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const mailtoLink = `mailto:${contact.email}?subject=Re: ${contact.subject || 'Your inquiry'}`;
+                              window.open(mailtoLink);
+                            }}
+                          >
+                            <Mail className="h-4 w-4 mr-2" />
+                            Reply
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,16 +8,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 export default function ContactPage() {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     subject: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -28,24 +31,69 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Get reCAPTCHA token (only if reCAPTCHA is enabled)
+    const recaptchaToken = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY 
+      ? recaptchaRef.current?.getValue()
+      : undefined;
+    
+    // Validate reCAPTCHA if enabled
+    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !recaptchaToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the reCAPTCHA verification.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Message Sent!",
-        description: "Thank you for contacting us. We'll get back to you within 24 hours.",
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          recaptchaToken,
+        }),
       });
-      
-      setFormData({ name: '', email: '', subject: '', message: '' });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Message Sent!",
+          description: data.message || "Thank you for contacting us. We'll get back to you within 24 hours.",
+        });
+        
+        // Reset form
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+        
+        // Reset reCAPTCHA
+        recaptchaRef.current?.reset();
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to send message. Please try again.",
+          variant: "destructive",
+        });
+        
+        // Reset reCAPTCHA on error
+        recaptchaRef.current?.reset();
+      }
     } catch (error) {
+      console.error('Error submitting contact form:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to send message. Please check your connection and try again.",
         variant: "destructive",
       });
+      
+      // Reset reCAPTCHA on error
+      recaptchaRef.current?.reset();
     } finally {
       setIsSubmitting(false);
     }
@@ -166,6 +214,7 @@ export default function ContactPage() {
                         onChange={handleChange}
                         placeholder="Your full name"
                         required
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div className="space-y-2">
@@ -178,8 +227,22 @@ export default function ContactPage() {
                         onChange={handleChange}
                         placeholder="your@email.com"
                         required
+                        disabled={isSubmitting}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number (Optional)</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+91 12345 67890"
+                      disabled={isSubmitting}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -191,6 +254,7 @@ export default function ContactPage() {
                       onChange={handleChange}
                       placeholder="What's this about?"
                       required
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -204,8 +268,20 @@ export default function ContactPage() {
                       placeholder="Tell us how we can help you..."
                       rows={6}
                       required
+                      disabled={isSubmitting}
                     />
                   </div>
+
+                  {/* reCAPTCHA */}
+                  {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                    <div className="flex justify-center">
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                        theme="light"
+                      />
+                    </div>
+                  )}
 
                   <Button type="submit" disabled={isSubmitting} className="w-full">
                     {isSubmitting ? (

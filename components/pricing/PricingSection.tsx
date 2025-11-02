@@ -49,11 +49,43 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
       });
 
       const data = await response.json();
-      console.log('[Pricing] Razorpay subscription response:', data);
+      console.log('[Pricing] Full Razorpay subscription response:', data);
+      console.log('[Pricing] data.shortUrl value:', data.shortUrl);
+      console.log('[Pricing] data.shortUrl type:', typeof data.shortUrl);
+      console.log('[Pricing] data.shortUrl starts with https://rzp.io/?', data.shortUrl?.startsWith('https://rzp.io/'));
 
       if (response.ok && data.shortUrl) {
+        // Validate shortUrl format before redirecting
+        const shortUrl = data.shortUrl.trim();
+        console.log('[Pricing] Trimmed shortUrl:', shortUrl);
+        
+        if (!shortUrl.startsWith('https://rzp.io/')) {
+          console.error('[Pricing] ❌ Invalid shortUrl format!');
+          console.error('[Pricing] Expected: https://rzp.io/rzp/xxxxx');
+          console.error('[Pricing] Got:', shortUrl);
+          console.error('[Pricing] Full response data:', JSON.stringify(data, null, 2));
+          
+          toast({
+            title: "Invalid Checkout URL",
+            description: `The payment gateway returned an invalid checkout URL: ${shortUrl}. Expected URL starting with 'https://rzp.io/'. Please check Razorpay settings.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
         // Redirect to Razorpay payment page
-        window.location.href = data.shortUrl;
+        console.log('[Pricing] ✅ Valid shortUrl, redirecting to:', shortUrl);
+        window.location.href = shortUrl;
+        return;
+      }
+
+      // Handle missing shortUrl case
+      if (response.ok && data.missingShortUrl) {
+        toast({
+          title: "Hosted Checkout Not Enabled",
+          description: data.details || "Razorpay hosted checkout is not enabled. Please contact Razorpay support to activate it.",
+          variant: "destructive",
+        });
         return;
       }
 

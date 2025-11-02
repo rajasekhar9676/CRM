@@ -70,15 +70,28 @@ export async function POST(request: NextRequest) {
 
 async function handleSubscriptionActivated(data: any) {
   try {
-    const { id } = data;
+    const { id, charge_at, current_end } = data;
+    
+    // Calculate next due date from subscription data
+    const nextDueDate = charge_at
+      ? new Date(charge_at * 1000).toISOString()
+      : current_end
+      ? new Date(current_end * 1000).toISOString()
+      : null;
     
     // Update subscription in database
+    const updateData: any = {
+      status: 'active',
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (nextDueDate) {
+      updateData.next_due_date = nextDueDate;
+    }
+    
     const { error } = await getSupabaseAdmin()
       .from('subscriptions')
-      .update({
-        status: 'active',
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('razorpay_subscription_id', id);
 
     if (error) {
@@ -93,7 +106,7 @@ async function handleSubscriptionActivated(data: any) {
 
 async function handleSubscriptionCharged(subscriptionData: any, paymentData: any) {
   try {
-    const { id } = subscriptionData;
+    const { id, charge_at, current_end } = subscriptionData;
     
     console.log('Subscription charged:', {
       subscriptionId: id,
@@ -102,14 +115,27 @@ async function handleSubscriptionCharged(subscriptionData: any, paymentData: any
       status: paymentData.status,
     });
 
+    // Calculate next due date from subscription data
+    const nextDueDate = charge_at
+      ? new Date(charge_at * 1000).toISOString()
+      : current_end
+      ? new Date(current_end * 1000).toISOString()
+      : null;
+
     // Update subscription status to active if payment is successful
     if (paymentData.status === 'captured') {
+      const updateData: any = {
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (nextDueDate) {
+        updateData.next_due_date = nextDueDate;
+      }
+      
       const { error } = await getSupabaseAdmin()
         .from('subscriptions')
-        .update({
-          status: 'active',
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('razorpay_subscription_id', id);
 
       if (error) {
