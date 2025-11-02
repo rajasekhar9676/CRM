@@ -120,8 +120,20 @@ export async function POST(request: NextRequest) {
       console.log('🔍 Subscription short_url type:', typeof subscription.short_url);
       console.log('🔍 Full subscription response:', JSON.stringify(subscription, null, 2));
       console.log('🔍 All subscription fields:', Object.keys(subscription));
+      
+      // Fetch full subscription details to get charge_at and current_end
+      // These fields might not be in initial creation response
+      let fullSubscription = subscription;
+      try {
+        const { getRazorpaySubscription } = await import('@/lib/razorpay');
+        fullSubscription = await getRazorpaySubscription(subscription.id);
+        console.log('📥 Fetched full subscription details:', JSON.stringify(fullSubscription, null, 2));
+        console.log('📥 Full subscription fields:', Object.keys(fullSubscription));
+      } catch (fetchError) {
+        console.warn('⚠️ Could not fetch full subscription details, using initial response:', fetchError);
+      }
 
-      // Check if short_url exists
+      // Check if short_url exists (use original subscription for short_url check)
       if (!subscription.short_url) {
         console.error('❌ Razorpay subscription created but short_url is missing!');
         console.error('❌ This usually means hosted checkout is not enabled in your Razorpay account.');
@@ -141,27 +153,42 @@ export async function POST(request: NextRequest) {
       }
 
       // Normalize status & period timestamps for storage
-      const normalizedStatus = subscription.status === 'created' ? 'pending' : subscription.status;
-      const periodStart = subscription.start_at
-        ? new Date(subscription.start_at * 1000).toISOString()
+      const normalizedStatus = fullSubscription.status === 'created' ? 'pending' : fullSubscription.status;
+      const periodStart = fullSubscription.start_at
+        ? new Date(fullSubscription.start_at * 1000).toISOString()
         : new Date().toISOString();
-      const periodEnd = subscription.end_at
-        ? new Date(subscription.end_at * 1000).toISOString()
+      const periodEnd = fullSubscription.end_at
+        ? new Date(fullSubscription.end_at * 1000).toISOString()
         : new Date().toISOString();
       
       // Capture next due date from Razorpay (charge_at or current_end)
       // charge_at is the timestamp for the next charge
       // current_end is the end of current billing cycle (next billing date)
-      const nextDueDate = subscription.charge_at
-        ? new Date(subscription.charge_at * 1000).toISOString()
-        : subscription.current_end
-        ? new Date(subscription.current_end * 1000).toISOString()
-        : periodEnd; // Fallback to periodEnd if neither is available
+      // If neither available, calculate from start_at + 1 billing period
+      let nextDueDate: string | null = null;
+      
+      if (fullSubscription.charge_at) {
+        nextDueDate = new Date(fullSubscription.charge_at * 1000).toISOString();
+      } else if (fullSubscription.current_end) {
+        nextDueDate = new Date(fullSubscription.current_end * 1000).toISOString();
+      } else if (fullSubscription.start_at) {
+        // Calculate next due date: start_at + 1 billing cycle
+        // Most plans are monthly (30 days)
+        const startDate = new Date(fullSubscription.start_at * 1000);
+        const nextDue = new Date(startDate);
+        nextDue.setMonth(nextDue.getMonth() + 1); // Add 1 month
+        nextDueDate = nextDue.toISOString();
+      } else {
+        // Last fallback: use periodEnd
+        nextDueDate = periodEnd;
+      }
 
-      console.log('📅 Next Due Date from Razorpay:', {
-        charge_at: subscription.charge_at,
-        current_end: subscription.current_end,
-        next_due_date: nextDueDate,
+      console.log('📅 Next Due Date calculation:', {
+        charge_at: fullSubscription.charge_at,
+        current_end: fullSubscription.current_end,
+        start_at: fullSubscription.start_at,
+        calculated_next_due_date: nextDueDate,
+        periodEnd: periodEnd,
       });
 
       // Store subscription details in database
@@ -172,8 +199,8 @@ export async function POST(request: NextRequest) {
             user_id: user.id,
             plan: plan as SubscriptionPlan,
             status: normalizedStatus,
-            razorpay_subscription_id: subscription.id,
-            razorpay_customer_id: subscription.customer_id,
+            razorpay_subscription_id: fullSubscription.id,
+            razorpay_customer_id: fullSubscription.customer_id,
             current_period_start: periodStart,
             current_period_end: periodEnd,
             next_due_date: nextDueDate,

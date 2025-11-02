@@ -69,11 +69,19 @@ export async function POST(request: NextRequest) {
         const razorpaySub = await getRazorpaySubscription(sub.razorpay_subscription_id);
 
         // Calculate next due date
-        const nextDueDate = razorpaySub.charge_at
-          ? new Date(razorpaySub.charge_at * 1000).toISOString()
-          : razorpaySub.current_end
-          ? new Date(razorpaySub.current_end * 1000).toISOString()
-          : null;
+        let nextDueDate: string | null = null;
+        
+        if (razorpaySub.charge_at) {
+          nextDueDate = new Date(razorpaySub.charge_at * 1000).toISOString();
+        } else if (razorpaySub.current_end) {
+          nextDueDate = new Date(razorpaySub.current_end * 1000).toISOString();
+        } else if (razorpaySub.start_at) {
+          // Calculate next due date: start_at + 1 billing cycle (monthly)
+          const startDate = new Date(razorpaySub.start_at * 1000);
+          const nextDue = new Date(startDate);
+          nextDue.setMonth(nextDue.getMonth() + 1); // Add 1 month
+          nextDueDate = nextDue.toISOString();
+        }
 
         // Update subscription in database
         const updateData: any = {
