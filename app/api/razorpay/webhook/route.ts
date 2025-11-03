@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
 async function handleSubscriptionActivated(data: any) {
   try {
-    const { id, charge_at, current_end } = data;
+    const { id, charge_at, current_end, plan_id } = data;
     
     // Calculate next due date from subscription data
     const nextDueDate = charge_at
@@ -79,23 +79,98 @@ async function handleSubscriptionActivated(data: any) {
       ? new Date(current_end * 1000).toISOString()
       : null;
     
-    // Update subscription in database
+    // Determine plan from Razorpay plan_id
+    let plan: string = 'free';
+    if (plan_id === process.env.NEXT_PUBLIC_RAZORPAY_STARTER_PLAN_ID) {
+      plan = 'starter';
+    } else if (plan_id === process.env.NEXT_PUBLIC_RAZORPAY_PRO_PLAN_ID) {
+      plan = 'pro';
+    } else if (plan_id === process.env.NEXT_PUBLIC_RAZORPAY_BUSINESS_PLAN_ID) {
+      plan = 'business';
+    }
+    
+    // Get subscription to find user_id
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: subscription, error: fetchError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('user_id')
+      .eq('razorpay_subscription_id', id)
+      .single();
+
+    if (fetchError || !subscription) {
+      console.error('Error fetching subscription for user update:', fetchError);
+    }
+    
+    // Only update/create subscription when activated (payment succeeded)
+    // Delete any pending subscriptions first
+    await supabaseAdmin
+      .from('subscriptions')
+      .delete()
+      .eq('razorpay_subscription_id', id)
+      .in('status', ['created', 'pending']);
+
+    // Get existing subscription or prepare new one
+    const { data: existingSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('user_id')
+      .eq('razorpay_subscription_id', id)
+      .maybeSingle();
+
     const updateData: any = {
       status: 'active',
+      plan: plan, // Update plan
       updated_at: new Date().toISOString(),
     };
     
     if (nextDueDate) {
       updateData.next_due_date = nextDueDate;
     }
-    
-    const { error } = await getSupabaseAdmin()
-      .from('subscriptions')
-      .update(updateData)
-      .eq('razorpay_subscription_id', id);
 
-    if (error) {
-      console.error('Error updating subscription:', error);
+    // Update existing or insert new
+    if (existingSub) {
+      const { error } = await supabaseAdmin
+        .from('subscriptions')
+        .update(updateData)
+        .eq('razorpay_subscription_id', id);
+      
+      if (error) {
+        console.error('Error updating subscription:', error);
+      }
+    } else if (subscription?.user_id) {
+      // Insert new subscription only if user_id exists
+      const { error } = await supabaseAdmin
+        .from('subscriptions')
+        .insert({
+          user_id: subscription.user_id,
+          plan: plan,
+          status: 'active',
+          razorpay_subscription_id: id,
+          current_period_start: new Date().toISOString(),
+          current_period_end: nextDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          next_due_date: nextDueDate,
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error('Error inserting subscription:', error);
+      }
+    }
+
+    // Also update user's plan in users table
+    if (subscription?.user_id) {
+      const { error: userError } = await supabaseAdmin
+        .from('users')
+        .update({
+          plan: plan,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', subscription.user_id);
+
+      if (userError) {
+        console.warn('Warning: Could not update user plan:', userError);
+      } else {
+        console.log(`✅ Updated user plan to ${plan} for user ${subscription.user_id}`);
+      }
     }
 
     console.log('Subscription activated:', id);

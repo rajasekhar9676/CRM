@@ -1,18 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/context/SubscriptionProvider';
-import { formatPrice } from '@/lib/subscription';
+import { formatPrice, SUBSCRIPTION_PLANS } from '@/lib/subscription';
 import { Crown, Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function SubscriptionManagement() {
+  const { data: session } = useSession();
   const { subscription, loading, customerCount, invoiceCountThisMonth, refreshSubscription } = useSubscription();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [loadingPaymentDetails, setLoadingPaymentDetails] = useState(false);
 
   const handleUpgrade = async (planType: 'starter' | 'pro' | 'business' = 'pro') => {
     setIsLoading(true);
@@ -27,41 +31,173 @@ export function SubscriptionManagement() {
 
       const data = await response.json();
       console.log('[Settings] Full Razorpay subscription response:', data);
-      console.log('[Settings] data.shortUrl value:', data.shortUrl);
-      console.log('[Settings] data.shortUrl type:', typeof data.shortUrl);
-      console.log('[Settings] data.shortUrl starts with https://rzp.io/?', data.shortUrl?.startsWith('https://rzp.io/'));
 
-      if (response.ok && data.shortUrl) {
-        // Validate shortUrl format before redirecting
-        const shortUrl = data.shortUrl.trim();
-        console.log('[Settings] Trimmed shortUrl:', shortUrl);
+      if (response.ok && data.subscriptionId) {
+        // Use Razorpay Checkout.js directly (Standard Manual Checkout)
+        const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+        const subscriptionId = data.subscriptionId; // Store in variable for closure
         
-        if (!shortUrl.startsWith('https://rzp.io/')) {
-          console.error('[Settings] ❌ Invalid shortUrl format!');
-          console.error('[Settings] Expected: https://rzp.io/rzp/xxxxx');
-          console.error('[Settings] Got:', shortUrl);
-          console.error('[Settings] Full response data:', JSON.stringify(data, null, 2));
-          
+        if (!razorpayKey) {
           toast({
-            title: "Invalid Checkout URL",
-            description: `The payment gateway returned an invalid checkout URL: ${shortUrl}. Expected URL starting with 'https://rzp.io/'. Please check Razorpay settings.`,
+            title: "Configuration Error",
+            description: "Razorpay key ID not found. Please check your environment configuration.",
             variant: "destructive",
           });
           return;
         }
-        
-        console.log('[Settings] ✅ Valid shortUrl, redirecting to:', shortUrl);
-        window.location.href = shortUrl;
-        return;
-      }
 
-      // Handle missing shortUrl case
-      if (response.ok && data.missingShortUrl) {
-        toast({
-          title: "Hosted Checkout Not Enabled",
-          description: data.details || "Razorpay hosted checkout is not enabled. Please contact Razorpay support to activate it.",
-          variant: "destructive",
-        });
+        // Check if Razorpay is loaded
+        if (typeof window === 'undefined' || !(window as any).Razorpay) {
+          toast({
+            title: "Razorpay Not Loaded",
+            description: "Razorpay checkout script is loading. Please wait a moment and try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const Razorpay = (window as any).Razorpay;
+
+        // Open Razorpay Checkout with subscription_id
+        const options = {
+          key: razorpayKey,
+          subscription_id: subscriptionId,
+          name: data.planDetails?.name || 'Subscription',
+          description: `Subscribe to ${data.planDetails?.name || planType} plan`,
+          prefill: {
+            email: session?.user?.email || '',
+            name: session?.user?.name || '',
+          },
+          theme: {
+            color: '#10b981', // Emerald color
+          },
+          // Enable payment methods explicitly
+          method: {
+            netbanking: true,
+            card: true,
+            upi: true,
+            wallet: true,
+          },
+          // Also configure display blocks for better control
+          config: {
+            display: {
+              blocks: {
+                banks: {
+                  name: 'Available Payment Methods',
+                  instruments: [
+                    {
+                      method: 'upi'
+                    },
+                    {
+                      method: 'netbanking'
+                    },
+                    {
+                      method: 'card'
+                    },
+                    {
+                      method: 'wallet'
+                    }
+                  ],
+                },
+              },
+              sequence: ['block.banks'],
+              preferences: {
+                show_default_blocks: false, // Only show methods we specify
+              },
+            },
+          },
+          handler: async function(response: any) {
+            console.log('[Settings] ✅ Payment successful:', response);
+            
+            // Immediately verify and update subscription status
+            try {
+              const verifyResponse = await fetch('/api/razorpay/verify-subscription', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  subscriptionId: subscriptionId, // Use the stored variable
+                }),
+              });
+
+              const verifyData = await verifyResponse.json();
+
+              if (verifyResponse.ok) {
+                console.log('[Settings] Subscription verified and updated:', verifyData);
+                toast({
+                  title: "🎉 Subscription Activated!",
+                  description: "Your subscription has been successfully activated!",
+                });
+                await refreshSubscription();
+              } else {
+                console.warn('[Settings] Could not verify subscription, but payment succeeded:', verifyData);
+                toast({
+                  title: "Payment Successful",
+                  description: "Your payment was successful. Subscription will be activated shortly.",
+                });
+              }
+            } catch (verifyError) {
+              console.error('[Settings] Error verifying subscription:', verifyError);
+              toast({
+                title: "Payment Successful",
+                description: "Your payment was successful. Subscription will be activated shortly.",
+              });
+            }
+            
+            // Refresh subscription data
+            await refreshSubscription();
+          },
+          modal: {
+            ondismiss: function() {
+              console.log('[Settings] User closed the checkout');
+              setIsLoading(false);
+              toast({
+                title: "Checkout Cancelled",
+                description: "You can complete the subscription later.",
+              });
+            },
+          },
+          // Add error handler for payment failures
+          handlerError: function(error: any) {
+            console.error('[Settings] ❌ Payment failed:', error);
+            setIsLoading(false);
+            
+            // Parse error message
+            let errorMessage = "Payment failed. Please try again.";
+            
+            if (error.error) {
+              const errorCode = error.error.code;
+              const errorDescription = error.error.description;
+              
+              if (errorCode === 'BAD_REQUEST_ERROR') {
+                if (errorDescription?.includes('card')) {
+                  errorMessage = "Card payment failed. Please check your card details or try a different payment method.";
+                } else if (errorDescription?.includes('insufficient')) {
+                  errorMessage = "Insufficient funds. Please check your account balance or use a different payment method.";
+                } else {
+                  errorMessage = errorDescription || "Payment request is invalid. Please check your payment details.";
+                }
+              } else if (errorCode === 'GATEWAY_ERROR') {
+                errorMessage = "Payment gateway error. Please try again in a few moments.";
+              } else if (errorCode === 'NETWORK_ERROR') {
+                errorMessage = "Network error. Please check your internet connection and try again.";
+              } else if (errorDescription) {
+                errorMessage = errorDescription;
+              }
+            }
+            
+            toast({
+              title: "Payment Failed",
+              description: errorMessage,
+              variant: "destructive",
+            });
+          },
+        };
+
+        console.log('[Settings] Opening Razorpay Checkout with subscription_id:', data.subscriptionId);
+        const razorpayInstance = new Razorpay(options);
+        razorpayInstance.open();
         return;
       }
 
@@ -72,6 +208,109 @@ export function SubscriptionManagement() {
         title: "Error",
         description: "Failed to start upgrade process. Please try again.",
         variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch payment details when component loads
+  useEffect(() => {
+    const userPlan = subscription?.plan || 'free';
+    if (subscription?.razorpaySubscriptionId && userPlan !== 'free') {
+      fetchPaymentDetails();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscription?.razorpaySubscriptionId, subscription?.plan]);
+
+  const fetchPaymentDetails = async () => {
+    if (!subscription?.razorpaySubscriptionId) return;
+
+    setLoadingPaymentDetails(true);
+    try {
+      const response = await fetch('/api/razorpay/get-payment-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscriptionId: subscription.razorpaySubscriptionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setPaymentDetails(data.paymentDetails);
+        console.log('✅ Payment details fetched:', data.paymentDetails);
+      } else {
+        console.error('Error fetching payment details:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching payment details:', error);
+    } finally {
+      setLoadingPaymentDetails(false);
+    }
+  };
+
+  const handleSyncSubscription = async () => {
+    setIsLoading(true);
+    try {
+      // First, refresh from database
+      await refreshSubscription();
+      
+      // If we have a Razorpay subscription, sync from Razorpay API
+      if (subscription?.razorpaySubscriptionId) {
+        const response = await fetch('/api/razorpay/sync-my-subscription', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          toast({
+            title: "Subscription Synced",
+            description: data.message || "Your subscription has been synced successfully!",
+          });
+          await refreshSubscription();
+          await fetchPaymentDetails(); // Also refresh payment details
+          // Reload page to ensure all data updates
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          // Even if Razorpay sync fails, database refresh still happened
+          await refreshSubscription();
+          toast({
+            title: "Subscription Refreshed",
+            description: "Subscription data has been refreshed from database.",
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      } else {
+        // Just refresh from database
+        await refreshSubscription();
+        await fetchPaymentDetails();
+        toast({
+          title: "Subscription Refreshed",
+          description: "Subscription data has been refreshed from database.",
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error('Error syncing subscription:', error);
+      // Still try to refresh from database
+      await refreshSubscription();
+      toast({
+        title: "Subscription Refreshed",
+        description: "Subscription data has been refreshed from database.",
       });
     } finally {
       setIsLoading(false);
@@ -144,23 +383,48 @@ export function SubscriptionManagement() {
   const isActive = subscription?.status === 'active';
   const isCanceled = subscription?.cancelAtPeriodEnd;
 
+  // Debug logging
+  console.log('[SubscriptionManagement] Subscription data:', {
+    subscription,
+    plan,
+    isActive,
+    subscriptionPlan: subscription?.plan,
+    subscriptionStatus: subscription?.status,
+    razorpaySubscriptionId: subscription?.razorpaySubscriptionId,
+    currentPeriodStart: subscription?.currentPeriodStart,
+    currentPeriodEnd: subscription?.currentPeriodEnd,
+    nextDueDate: subscription?.nextDueDate,
+    hasSubscription: !!subscription,
+  });
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Crown className="h-5 w-5" />
-          Subscription
+          Your Plan & Upgrade Options
         </CardTitle>
         <CardDescription>
-          Manage your subscription and billing information
+          Manage your subscription and unlock more features
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Current Plan */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-          <div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">
+                Current Plan: {plan === 'free' ? 'Free' : plan === 'starter' ? 'Starter' : plan === 'pro' ? 'Pro' : 'Business'}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {subscription?.plan ? (
+                  `You're currently on the ${plan} plan${plan !== 'free' ? ' with advanced features' : ' with basic features'}.`
+                ) : (
+                  "You're currently on the free plan with basic features."
+                )}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold capitalize">{plan} Plan</h3>
               <Badge variant={isActive ? "default" : "secondary"}>
                 {isActive ? "Active" : "Inactive"}
               </Badge>
@@ -168,19 +432,18 @@ export function SubscriptionManagement() {
                 <Badge variant="destructive">Canceled</Badge>
               )}
             </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {plan === 'free' ? 'Free forever' : `₹${plan === 'pro' ? '499' : '999'}/month`}
-            </p>
           </div>
-          {plan === 'free' && (
-            <Button onClick={() => handleUpgrade('starter')} disabled={isLoading}>
-              {isLoading ? 'Processing...' : 'Upgrade Plan'}
-            </Button>
+          {plan !== 'free' && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-700">
+                {plan === 'starter' ? '₹249/month' : plan === 'pro' ? '₹499/month' : '₹999/month'}
+              </p>
+            </div>
           )}
         </div>
-
+        
         {/* Usage Stats */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -188,20 +451,38 @@ export function SubscriptionManagement() {
             </div>
             <div className="text-2xl font-bold">{customerCount}</div>
             <div className="text-xs text-gray-500">
-              {plan === 'free' ? 'of 50 limit' : 'Unlimited'}
+              {(() => {
+                const planLimits = SUBSCRIPTION_PLANS[plan]?.limits;
+                if (planLimits?.maxCustomers === -1) return 'Unlimited';
+                if (plan === 'free') return 'of 50 limit';
+                return `of ${planLimits?.maxCustomers || '200'} limit`;
+              })()}
             </div>
           </div>
           <div className="p-4 border rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Invoices This Month</span>
+              <span className="text-sm font-medium">Invoices this month</span>
             </div>
             <div className="text-2xl font-bold">{invoiceCountThisMonth}</div>
             <div className="text-xs text-gray-500">
-              {plan === 'free' ? 'of 20 limit' : 'Unlimited'}
+              {(() => {
+                const planLimits = SUBSCRIPTION_PLANS[plan]?.limits;
+                if (planLimits?.maxInvoicesPerMonth === -1) return 'Unlimited';
+                if (plan === 'free') return 'of 20 limit';
+                return `of ${planLimits?.maxInvoicesPerMonth || '100'} limit`;
+              })()}
             </div>
           </div>
         </div>
+        
+        {plan === 'free' && (
+          <div className="flex justify-end">
+            <Button onClick={() => handleUpgrade('starter')} disabled={isLoading}>
+              {isLoading ? 'Processing...' : 'Upgrade Plan'}
+            </Button>
+          </div>
+        )}
 
         {/* Plan Features */}
         <div>
@@ -210,13 +491,23 @@ export function SubscriptionManagement() {
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm">
-                {plan === 'free' ? 'Up to 50 customers' : 'Unlimited customers'}
+                {(() => {
+                  const planLimits = SUBSCRIPTION_PLANS[plan]?.limits;
+                  if (planLimits?.maxCustomers === -1) return 'Unlimited customers';
+                  if (plan === 'free') return 'Up to 50 customers';
+                  return `Up to ${planLimits?.maxCustomers || '200'} customers`;
+                })()}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm">
-                {plan === 'free' ? '20 invoices/month' : 'Unlimited invoices'}
+{(() => {
+                  const planLimits = SUBSCRIPTION_PLANS[plan]?.limits;
+                  if (planLimits?.maxInvoicesPerMonth === -1) return 'Unlimited invoices';
+                  if (plan === 'free') return '20 invoices/month';
+                  return `${planLimits?.maxInvoicesPerMonth || '100'} invoices/month`;
+                })()}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -246,40 +537,215 @@ export function SubscriptionManagement() {
         {plan !== 'free' && subscription && (
           <div>
             <h4 className="font-medium mb-3">Billing Information</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Current Period</span>
-                <span>
-                  {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {' '}
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+            <div className="space-y-3 text-sm bg-gray-50 p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Subscription ID</span>
+                <span className="font-mono text-xs text-gray-900">
+                  {subscription.razorpaySubscriptionId || subscription.stripeSubscriptionId || subscription.cashfreeSubscriptionId || 'N/A'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Next Billing Date</span>
-                <span>{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Current Period</span>
+                <span className="text-gray-900">
+                  {subscription.currentPeriodStart && subscription.currentPeriodEnd ? (
+                    <>
+                      {new Date(subscription.currentPeriodStart).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                      })}
+                      {' - '}
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                      })}
+                    </>
+                  ) : (
+                    'N/A'
+                  )}
+                </span>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Next Billing Date</span>
+                <span className="text-gray-900 font-semibold">
+                  {subscription.nextDueDate 
+                    ? new Date(subscription.nextDueDate).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                      })
+                    : subscription.currentPeriodEnd 
+                    ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric' 
+                      })
+                    : 'N/A'}
+                </span>
+              </div>
+              {(subscription.razorpaySubscriptionId || subscription.stripeSubscriptionId || subscription.cashfreeSubscriptionId) && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Payment Gateway</span>
+                  <span className="text-gray-900">
+                    {subscription.razorpaySubscriptionId ? 'Razorpay' : 
+                     subscription.stripeSubscriptionId ? 'Stripe' : 
+                     subscription.cashfreeSubscriptionId ? 'Cashfree' : 'N/A'}
+                  </span>
+                </div>
+              )}
+              
+              {/* Payment Method Details */}
+              {loadingPaymentDetails ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Payment Method</span>
+                  <span className="text-gray-500 text-xs">Loading...</span>
+                </div>
+              ) : paymentDetails ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 font-medium">Payment Method</span>
+                    <span className="text-gray-900 capitalize font-semibold">
+                      {paymentDetails.method === 'card' ? 'Card' :
+                       paymentDetails.method === 'upi' ? 'UPI' :
+                       paymentDetails.method === 'wallet' ? 'Wallet' :
+                       paymentDetails.method === 'netbanking' ? 'Net Banking' :
+                       paymentDetails.method || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {/* Card Details */}
+                  {paymentDetails.method === 'card' && paymentDetails.card && (
+                    <div className="pl-4 border-l-2 border-gray-200 space-y-1 mt-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">Card</span>
+                        <span className="text-gray-900 font-mono">
+                          •••• •••• •••• {paymentDetails.card.last4}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">Network</span>
+                        <span className="text-gray-900 capitalize">
+                          {paymentDetails.card.network || 'N/A'}
+                        </span>
+                      </div>
+                      {paymentDetails.card.type && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500">Type</span>
+                          <span className="text-gray-900 capitalize">
+                            {paymentDetails.card.type}
+                          </span>
+                        </div>
+                      )}
+                      {paymentDetails.card.issuer && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500">Issuer</span>
+                          <span className="text-gray-900">
+                            {paymentDetails.card.issuer}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* UPI Details */}
+                  {paymentDetails.method === 'upi' && paymentDetails.upi && (
+                    <div className="pl-4 border-l-2 border-gray-200 space-y-1 mt-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">UPI ID</span>
+                        <span className="text-gray-900 font-mono">
+                          {paymentDetails.upi.vpa || paymentDetails.vpa || 'N/A'}
+                        </span>
+                      </div>
+                      {paymentDetails.upi.payer_account_type && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500">Account Type</span>
+                          <span className="text-gray-900 capitalize">
+                            {paymentDetails.upi.payer_account_type}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Wallet Details */}
+                  {paymentDetails.method === 'wallet' && paymentDetails.wallet && (
+                    <div className="pl-4 border-l-2 border-gray-200 space-y-1 mt-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">Wallet</span>
+                        <span className="text-gray-900 capitalize">
+                          {paymentDetails.wallet.wallet || paymentDetails.wallet || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Net Banking Details */}
+                  {paymentDetails.method === 'netbanking' && paymentDetails.netbanking && (
+                    <div className="pl-4 border-l-2 border-gray-200 space-y-1 mt-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">Bank</span>
+                        <span className="text-gray-900">
+                          {paymentDetails.netbanking.bank || paymentDetails.bank || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : subscription?.razorpaySubscriptionId ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Payment Method</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-xs">Not available</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchPaymentDetails}
+                      disabled={loadingPaymentDetails}
+                      className="h-6 px-2 text-xs"
+                    >
+                      {loadingPaymentDetails ? 'Loading...' : 'Refresh'}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         )}
 
         {/* Actions */}
-        {plan !== 'free' && (
-          <div className="pt-4 border-t">
+        <div className="pt-4 border-t space-y-2">
+          {/* Sync Subscription Button */}
+          {subscription && (subscription.razorpaySubscriptionId || subscription.stripeSubscriptionId) && (
             <Button
               variant="outline"
-              onClick={handleCancelSubscription}
-              disabled={isLoading || isCanceled}
+              onClick={handleSyncSubscription}
+              disabled={isLoading}
               className="w-full"
             >
-              {isLoading ? 'Processing...' : isCanceled ? 'Subscription Canceled' : 'Cancel Subscription'}
+              {isLoading ? 'Syncing...' : '🔄 Sync Subscription Status'}
             </Button>
-            {isCanceled && (
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                Your subscription will end on {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        )}
+          )}
+          
+          {/* Cancel Subscription Button */}
+          {plan !== 'free' && (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancelSubscription}
+                disabled={isLoading || isCanceled}
+                className="w-full"
+              >
+                {isLoading ? 'Processing...' : isCanceled ? 'Subscription Canceled' : 'Cancel Subscription'}
+              </Button>
+              {isCanceled && (
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Your subscription will end on {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

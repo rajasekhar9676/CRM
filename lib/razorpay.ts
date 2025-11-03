@@ -41,6 +41,7 @@ export const RAZORPAY_PLANS = {
 };
 
 // Helper function to create a Razorpay subscription
+// Matches Razorpay API documentation: https://razorpay.com/docs/api/payments/subscriptions/create-subscription/
 export async function createRazorpaySubscription(
   planId: string,
   customerDetails: {
@@ -49,21 +50,58 @@ export async function createRazorpaySubscription(
     customerEmail: string;
     customerPhone: string;
   },
-  totalCount?: number
+  options?: {
+    totalCount?: number;
+    quantity?: number;
+    customerNotify?: boolean;
+    startAt?: number; // Unix timestamp for when subscription should start
+    expireBy?: number; // Unix timestamp for when customer can make authorization payment
+    addons?: Array<{
+      item: {
+        name: string;
+        amount: number; // in paise
+        currency: string;
+      };
+    }>;
+    offerId?: string;
+    notes?: Record<string, string>;
+  }
 ) {
   if (!razorpay) {
     throw new Error('Razorpay not configured. Please set up Razorpay environment variables.');
   }
   
   try {
+    // Calculate expire_by: default to 30 days from now (Unix timestamp)
+    // This gives customers 30 days to complete the authorization payment
+    const defaultExpireBy = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days from now
+    
     const subscriptionData: any = {
+      // Required parameters
       plan_id: planId,
-      total_count: totalCount || 12, // Default to 12 months
-      quantity: 1,
-      customer_notify: 1,
+      total_count: options?.totalCount || 12, // Default to 12 billing cycles
+      
+      // Optional parameters with defaults
+      quantity: options?.quantity || 1,
+      customer_notify: options?.customerNotify !== undefined ? options.customerNotify : true, // Boolean, not number
+      
+      // Set expire_by to ensure customer completes authorization within 30 days
+      expire_by: options?.expireBy || defaultExpireBy,
+      
+      // Optional: start_at for future-dated subscriptions (skip if immediate)
+      ...(options?.startAt && { start_at: options.startAt }),
+      
+      // Optional: addons for upfront charges
+      ...(options?.addons && options.addons.length > 0 && { addons: options.addons }),
+      
+      // Optional: offer_id for discounts
+      ...(options?.offerId && { offer_id: options.offerId }),
+      
+      // Notes with customer details
       notes: {
         customer_name: customerDetails.customerName,
         customer_email: customerDetails.customerEmail,
+        ...options?.notes, // Merge any additional notes
       },
     };
 
@@ -111,7 +149,30 @@ export async function createRazorpaySubscription(
 
     subscriptionData.customer_id = customerId;
 
+    // Log subscription data being sent to Razorpay (for debugging)
+    console.log('📤 Creating Razorpay subscription with data:', {
+      plan_id: subscriptionData.plan_id,
+      customer_id: subscriptionData.customer_id,
+      total_count: subscriptionData.total_count,
+      quantity: subscriptionData.quantity,
+      customer_notify: subscriptionData.customer_notify,
+      expire_by: subscriptionData.expire_by,
+      expire_by_formatted: new Date(subscriptionData.expire_by * 1000).toISOString(),
+      start_at: subscriptionData.start_at,
+      start_at_formatted: subscriptionData.start_at ? new Date(subscriptionData.start_at * 1000).toISOString() : 'Not set (immediate)',
+      has_addons: !!subscriptionData.addons,
+      offer_id: subscriptionData.offer_id || 'Not set',
+      notes: subscriptionData.notes,
+    });
+
     const subscription = await razorpay.subscriptions.create(subscriptionData);
+    
+    console.log('✅ Razorpay subscription created successfully:', {
+      subscription_id: subscription.id,
+      status: subscription.status,
+      short_url: subscription.short_url,
+    });
+    
     return subscription;
   } catch (error) {
     console.error('Error creating Razorpay subscription:', error);

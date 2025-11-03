@@ -94,6 +94,7 @@ export interface Subscription {
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  nextDueDate?: string;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
   cashfreeSubscriptionId?: string;

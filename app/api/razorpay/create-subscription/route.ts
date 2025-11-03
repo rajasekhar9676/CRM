@@ -109,10 +109,17 @@ export async function POST(request: NextRequest) {
 
       console.log('🔍 Creating subscription with customer details:', customerDetails);
 
+      // Create subscription with proper API parameters matching Razorpay documentation
       const subscription = await createRazorpaySubscription(
         planConfig.planId,
         customerDetails,
-        12 // 12 billing cycles
+        {
+          totalCount: 12, // 12 billing cycles (1 year for monthly plans)
+          quantity: 1, // Default quantity
+          customerNotify: true, // Razorpay handles customer communication
+          // expireBy is automatically set to 30 days from now (default in function)
+          // startAt is omitted for immediate subscriptions
+        }
       );
 
       console.log('✅ Razorpay subscription created:', subscription);
@@ -185,45 +192,28 @@ export async function POST(request: NextRequest) {
 
       console.log('📅 Next Due Date calculation:', {
         charge_at: fullSubscription.charge_at,
+        charge_at_formatted: fullSubscription.charge_at ? new Date(fullSubscription.charge_at * 1000).toISOString() : null,
         current_end: fullSubscription.current_end,
+        current_end_formatted: fullSubscription.current_end ? new Date(fullSubscription.current_end * 1000).toISOString() : null,
         start_at: fullSubscription.start_at,
+        start_at_formatted: fullSubscription.start_at ? new Date(fullSubscription.start_at * 1000).toISOString() : null,
+        end_at: fullSubscription.end_at,
+        end_at_formatted: fullSubscription.end_at ? new Date(fullSubscription.end_at * 1000).toISOString() : null,
         calculated_next_due_date: nextDueDate,
         periodEnd: periodEnd,
+        method_used: fullSubscription.charge_at ? 'charge_at' : fullSubscription.current_end ? 'current_end' : fullSubscription.start_at ? 'calculated_from_start_at' : 'fallback_periodEnd',
+        all_razorpay_fields: Object.keys(fullSubscription),
       });
-
-      // Store subscription details in database
-      const { error: subscriptionError } = await supabaseAdmin
-        .from('subscriptions')
-        .upsert(
-          {
-            user_id: user.id,
-            plan: plan as SubscriptionPlan,
-            status: normalizedStatus,
-            razorpay_subscription_id: fullSubscription.id,
-            razorpay_customer_id: fullSubscription.customer_id,
-            current_period_start: periodStart,
-            current_period_end: periodEnd,
-            next_due_date: nextDueDate,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'user_id',
-          }
-        );
-
-      if (subscriptionError) {
-        console.error('Error storing subscription:', subscriptionError);
-        return NextResponse.json(
-          { 
-            error: 'Database error while saving subscription',
-            details: subscriptionError.message,
-            code: subscriptionError.code,
-            databaseError: true
-          },
-          { status: 500 }
-        );
+      
+      // Log subscription schedule if available (Razorpay API sometimes provides this)
+      if ((fullSubscription as any).schedule) {
+        console.log('📅 Subscription schedule:', JSON.stringify((fullSubscription as any).schedule, null, 2));
       }
+
+      // IMPORTANT: Do NOT store subscription in database until payment is successful
+      // Subscription will be saved only after payment succeeds (via webhook or verify-subscription endpoint)
+      // This prevents creating dummy/pending subscriptions
+      console.log('📝 Subscription created in Razorpay. Will be saved to database only after successful payment.');
 
       // Validate short_url format before returning
       if (!subscription.short_url || !subscription.short_url.startsWith('https://rzp.io/')) {

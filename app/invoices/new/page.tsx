@@ -123,6 +123,25 @@ export default function NewInvoicePage() {
     setIsLoading(true);
 
     try {
+      // Check subscription limits first
+      const checkResponse = await fetch('/api/subscription/check-invoice-limit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: (session?.user as any)?.id,
+        }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if (!checkData.allowed) {
+        alert(checkData.reason || 'You have reached your monthly invoice limit. Please upgrade your plan.');
+        setIsLoading(false);
+        return;
+      }
+
       const amount = parseFloat(formData.amount) || 0;
 
       // Save to Supabase

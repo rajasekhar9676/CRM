@@ -45,6 +45,25 @@ export default function NewCustomerPage() {
     setIsLoading(true);
 
     try {
+      // Check subscription limits first
+      const checkResponse = await fetch('/api/subscription/check-customer-limit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: (session?.user as any)?.id,
+        }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      if (!checkData.allowed) {
+        alert(checkData.reason || 'You have reached your customer limit. Please upgrade your plan.');
+        setIsLoading(false);
+        return;
+      }
+
       // Save to Supabase
       const { data, error } = await supabase
         .from('customers')

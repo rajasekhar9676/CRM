@@ -7,20 +7,37 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PricingSection } from '@/components/pricing/PricingSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Crown, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Crown, CheckCircle, Loader2 } from 'lucide-react';
+import { useSubscription } from '@/context/SubscriptionProvider';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
 
 export default function PricingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { subscription, loading: subscriptionLoading, refreshSubscription } = useSubscription();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/');
       return;
     }
-  }, [status, router]);
+    
+    // Refresh subscription when page loads
+    if (status === 'authenticated' && session) {
+      refreshSubscription();
+    }
+  }, [status, router, session, refreshSubscription]);
+  
+  // Get current plan details
+  const currentPlan = subscription?.plan || 'free';
+  const planDetails = SUBSCRIPTION_PLANS[currentPlan];
+  const planName = planDetails?.name || 'Free';
+  const planPrice = planDetails?.price || 0;
+  const isActive = subscription?.status === 'active';
+  const hasActivePaidSubscription = currentPlan !== 'free' && isActive;
 
-  if (status === 'loading') {
+  if (status === 'loading' || subscriptionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -71,18 +88,46 @@ export default function PricingPage() {
               Your Current Plan
             </CardTitle>
             <CardDescription className="text-center sm:text-left">
-              You're currently on the Free plan. Upgrade to unlock more features and grow your business.
+              {subscriptionLoading ? (
+                'Loading your subscription...'
+              ) : currentPlan === 'free' ? (
+                "You're currently on the Free plan. Upgrade to unlock more features and grow your business."
+              ) : (
+                `You're currently on the ${planName} plan${planPrice > 0 ? ` (₹${planPrice}/month)` : ''}${isActive ? ' - Active' : ''}. ${currentPlan !== 'business' ? 'Upgrade to unlock more features!' : 'You have access to all features!'}`
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refreshSubscription()}
+                disabled={subscriptionLoading}
+                className="flex items-center gap-2"
+              >
+                {subscriptionLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Refresh Status
+                  </>
+                )}
+              </Button>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="p-4 bg-white rounded-lg border">
-                <h3 className="font-semibold text-gray-900 mb-2">Free Plan Features</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {planName} Plan Features
+                </h3>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Up to 50 customers</li>
-                  <li>• 20 invoices per month</li>
-                  <li>• Basic dashboard</li>
-                  <li>• Email support</li>
+                  {planDetails?.features?.slice(0, 4).map((feature, index) => (
+                    <li key={index}>• {feature}</li>
+                  ))}
                 </ul>
               </div>
               <div className="p-4 bg-white rounded-lg border">
@@ -107,8 +152,63 @@ export default function PricingPage() {
           </CardContent>
         </Card>
 
-        {/* Pricing Plans */}
-        <PricingSection showTitle={false} />
+        {/* Show different content based on subscription status */}
+        {hasActivePaidSubscription ? (
+          <Card className="bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-center sm:text-left">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                Active Subscription
+              </CardTitle>
+              <CardDescription className="text-center sm:text-left">
+                You're currently subscribed to the {planName} plan. Manage your subscription or upgrade to unlock more features.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-white rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">{planName} Plan</h3>
+                    <Badge variant="default" className="bg-emerald-600">
+                      Active
+                    </Badge>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">
+                    {planPrice > 0 ? `₹${planPrice}/month` : 'Free'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Next billing: {subscription?.nextDueDate ? new Date(subscription.nextDueDate).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={() => router.push('/settings')}
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    Manage Subscription
+                  </Button>
+                  {currentPlan !== 'business' && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        // Scroll to pricing section if user wants to upgrade
+                        document.getElementById('pricing-plans')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full sm:w-auto"
+                    >
+                      View Upgrade Options
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+        
+        {/* Always show pricing plans below - subscribed users can see upgrade options */}
+        <div id="pricing-plans">
+          <PricingSection showTitle={hasActivePaidSubscription} />
+        </div>
 
         {/* FAQ Section */}
         <Card>

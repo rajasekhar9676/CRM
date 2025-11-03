@@ -62,6 +62,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
 
     refreshSubscription();
+    
+    // Refresh subscription every 30 seconds to ensure it stays in sync
+    const interval = setInterval(() => {
+      refreshSubscription();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [session, status]);
 
   const plan = subscription?.plan || 'free';

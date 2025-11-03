@@ -18,6 +18,8 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
   const { data: session } = useSession();
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1); // Default: 1 month
+  const [paymentMode, setPaymentMode] = useState<'onetime' | 'recurring'>('onetime'); // Default: one-time
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (plan === 'free') {
@@ -40,88 +42,388 @@ export function PricingSection({ showTitle = true }: PricingSectionProps) {
     setLoading(plan);
 
     try {
-      const response = await fetch('/api/razorpay/create-subscription', {
+      // Use one-time payment by default (user-friendly, no automatic charges)
+      const endpoint = paymentMode === 'onetime' 
+        ? '/api/razorpay/create-onetime-payment'
+        : '/api/razorpay/create-subscription';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ 
+          plan,
+          durationMonths: paymentMode === 'onetime' ? selectedDuration : undefined,
+        }),
       });
 
       const data = await response.json();
-      console.log('[Pricing] Full Razorpay subscription response:', data);
-      console.log('[Pricing] data.shortUrl value:', data.shortUrl);
-      console.log('[Pricing] data.shortUrl type:', typeof data.shortUrl);
-      console.log('[Pricing] data.shortUrl starts with https://rzp.io/?', data.shortUrl?.startsWith('https://rzp.io/'));
+      console.log('[Pricing] Payment response:', data);
 
-      if (response.ok && data.shortUrl) {
-        // Validate shortUrl format before redirecting
-        const shortUrl = data.shortUrl.trim();
-        console.log('[Pricing] Trimmed shortUrl:', shortUrl);
+      if (response.ok) {
+        const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
         
-        if (!shortUrl.startsWith('https://rzp.io/')) {
-          console.error('[Pricing] ❌ Invalid shortUrl format!');
-          console.error('[Pricing] Expected: https://rzp.io/rzp/xxxxx');
-          console.error('[Pricing] Got:', shortUrl);
-          console.error('[Pricing] Full response data:', JSON.stringify(data, null, 2));
-          
+        // For one-time payment, use order_id instead of subscription_id
+        if (paymentMode === 'onetime' && data.orderId) {
+          const orderId = data.orderId;
+          const planConfig = SUBSCRIPTION_PLANS[plan];
+          const totalAmount = Math.round(planConfig.price * selectedDuration * 100); // Amount in paise
+
+          if (!razorpayKey) {
+            toast({
+              title: "Configuration Error",
+              description: "Razorpay key ID not found. Please check your environment configuration.",
+              variant: "destructive",
+            });
+            return;
+            }
+
+            // Check if Razorpay is loaded
+            if (typeof window === 'undefined' || !(window as any).Razorpay) {
+              toast({
+                title: "Razorpay Not Loaded",
+                description: "Razorpay checkout script is loading. Please wait a moment and try again.",
+                variant: "destructive",
+              });
+              return;
+            }
+
+            const Razorpay = (window as any).Razorpay;
+
+            // Open Razorpay Checkout for one-time payment (NO card saving, NO subscription)
+            const options = {
+              key: razorpayKey,
+              amount: totalAmount,
+              currency: 'INR',
+              name: planConfig.name || 'Subscription',
+              description: `One-time payment for ${selectedDuration} month(s) - ${planConfig.name} plan`,
+              order_id: orderId,
+              prefill: {
+                email: session?.user?.email || '',
+                name: session?.user?.name || '',
+              },
+              theme: {
+                color: '#10b981',
+              },
+              // Enable payment methods
+              method: {
+                netbanking: true,
+                card: true,
+                upi: true,
+                wallet: true,
+              },
+              // Disable card saving
+              remember_customer: false,
+              modal: {
+                ondismiss: function() {
+                  console.log('[Pricing] User closed the checkout');
+                  setLoading(null);
+                  toast({
+                    title: "Payment Cancelled",
+                    description: "You can complete the payment later.",
+                  });
+                },
+              },
+              handler: async function(response: any) {
+                console.log('[Pricing] ✅ One-time payment successful:', response);
+                
+                // Verify payment
+                try {
+                  const verifyResponse = await fetch('/api/razorpay/verify-onetime-payment', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      orderId: orderId,
+                      paymentId: response.razorpay_payment_id,
+                      signature: response.razorpay_signature,
+                      plan: plan,
+                      durationMonths: selectedDuration,
+                    }),
+                  });
+
+                  const verifyData = await verifyResponse.json();
+
+                  if (verifyResponse.ok) {
+                    toast({
+                      title: "🎉 Payment Successful!",
+                      description: verifyData.message || `Your ${planConfig.name} plan is active for ${selectedDuration} month(s)!`,
+                    });
+                    setTimeout(() => {
+                      window.location.href = '/dashboard';
+                    }, 1500);
+                  } else {
+                    toast({
+                      title: "Payment Successful",
+                      description: verifyData.error || "Your payment was successful. Subscription will be activated shortly.",
+                    });
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 2000);
+                  }
+                } catch (verifyError) {
+                  console.error('[Pricing] Error verifying payment:', verifyError);
+                  toast({
+                    title: "Payment Successful",
+                    description: "Your payment was successful. Subscription will be activated shortly.",
+                  });
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 2000);
+                }
+              },
+              handlerError: function(error: any) {
+                console.error('[Pricing] ❌ Payment failed:', error);
+                setLoading(null);
+                
+                let errorMessage = "Payment failed. Please try again.";
+                
+                if (error.error) {
+                  const errorCode = error.error.code;
+                  const errorDescription = error.error.description;
+                  
+                  if (errorCode === 'BAD_REQUEST_ERROR') {
+                    if (errorDescription?.includes('card')) {
+                      errorMessage = "Card payment failed. Please check your card details or try a different payment method.";
+                    } else if (errorDescription?.includes('insufficient')) {
+                      errorMessage = "Insufficient funds. Please check your account balance or use a different payment method.";
+                    } else {
+                      errorMessage = errorDescription || "Payment request is invalid. Please check your payment details.";
+                    }
+                  } else if (errorCode === 'GATEWAY_ERROR') {
+                    errorMessage = "Payment gateway error. Please try again in a few moments.";
+                  } else if (errorCode === 'NETWORK_ERROR') {
+                    errorMessage = "Network error. Please check your internet connection and try again.";
+                  } else if (errorDescription) {
+                    errorMessage = errorDescription;
+                  }
+                }
+                
+                toast({
+                  title: "Payment Failed",
+                  description: errorMessage,
+                  variant: "destructive",
+                });
+              },
+            };
+
+            console.log('[Pricing] Opening Razorpay Checkout for one-time payment:', orderId);
+            const razorpayInstance = new Razorpay(options);
+            razorpayInstance.open();
+            return;
+          }
+
+          // For recurring subscription (original flow)
+          if (data.subscriptionId) {
+            const subscriptionId = data.subscriptionId;
+        
+            if (!razorpayKey) {
+              toast({
+                title: "Configuration Error",
+                description: "Razorpay key ID not found. Please check your environment configuration.",
+                variant: "destructive",
+              });
+              return;
+            }
+
+            // Check if Razorpay is loaded
+            if (typeof window === 'undefined' || !(window as any).Razorpay) {
+              toast({
+                title: "Razorpay Not Loaded",
+                description: "Razorpay checkout script is loading. Please wait a moment and try again.",
+                variant: "destructive",
+              });
+              return;
+            }
+
+            const Razorpay = (window as any).Razorpay;
+
+            // Open Razorpay Checkout with subscription_id
+            const options = {
+              key: razorpayKey,
+              subscription_id: subscriptionId,
+              name: data.planDetails?.name || 'Subscription',
+              description: `Subscribe to ${data.planDetails?.name || plan} plan`,
+              prefill: {
+                email: session?.user?.email || '',
+                name: session?.user?.name || '',
+              },
+              theme: {
+                color: '#10b981', // Emerald color
+              },
+              // Enable payment methods explicitly
+              method: {
+                netbanking: true,
+                card: true,
+                upi: true,
+                wallet: true,
+              },
+              // Also configure display blocks for better control
+              config: {
+                display: {
+                  blocks: {
+                    banks: {
+                      name: 'Available Payment Methods',
+                      instruments: [
+                        {
+                          method: 'upi'
+                        },
+                        {
+                          method: 'netbanking'
+                        },
+                        {
+                          method: 'card'
+                        },
+                        {
+                          method: 'wallet'
+                        }
+                      ],
+                    },
+                  },
+                  sequence: ['block.banks'],
+                  preferences: {
+                    show_default_blocks: false, // Only show methods we specify
+                  },
+                },
+              },
+              handler: async function(response: any) {
+                console.log('[Pricing] ✅ Payment successful:', response);
+                
+                // Immediately verify and update subscription status
+                try {
+                  const verifyResponse = await fetch('/api/razorpay/verify-subscription', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      subscriptionId: subscriptionId, // Use the stored variable
+                    }),
+                  });
+
+                  const verifyData = await verifyResponse.json();
+
+                  if (verifyResponse.ok) {
+                    console.log('[Pricing] Subscription verified and updated:', verifyData);
+                    toast({
+                      title: "🎉 Subscription Activated!",
+                      description: "Your subscription has been successfully activated! Redirecting to dashboard...",
+                    });
+                    // Refresh page to show updated subscription status
+                    setTimeout(() => {
+                      window.location.href = '/dashboard';
+                    }, 1500);
+                  } else {
+                    console.warn('[Pricing] Could not verify subscription, but payment succeeded:', verifyData);
+                    toast({
+                      title: "Payment Successful",
+                      description: verifyData.error || "Your payment was successful. Subscription will be activated shortly.",
+                    });
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 2000);
+                  }
+                } catch (verifyError) {
+                  console.error('[Pricing] Error verifying subscription:', verifyError);
+                  toast({
+                    title: "Payment Successful",
+                    description: "Your payment was successful. Subscription will be activated shortly. If you don't see the update, please refresh the page.",
+                  });
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 2000);
+                }
+              },
+              modal: {
+                ondismiss: function() {
+                  console.log('[Pricing] User closed the checkout');
+                  setLoading(null);
+                  toast({
+                    title: "Checkout Cancelled",
+                    description: "You can complete the subscription later.",
+                  });
+                },
+              },
+              // Add error handler for payment failures
+              handlerError: function(error: any) {
+                console.error('[Pricing] ❌ Payment failed:', error);
+                setLoading(null);
+                
+                // Parse error message
+                let errorMessage = "Payment failed. Please try again.";
+                
+                if (error.error) {
+                  const errorCode = error.error.code;
+                  const errorDescription = error.error.description;
+                  
+                  if (errorCode === 'BAD_REQUEST_ERROR') {
+                    if (errorDescription?.includes('card')) {
+                      errorMessage = "Card payment failed. Please check your card details or try a different payment method.";
+                    } else if (errorDescription?.includes('insufficient')) {
+                      errorMessage = "Insufficient funds. Please check your account balance or use a different payment method.";
+                    } else {
+                      errorMessage = errorDescription || "Payment request is invalid. Please check your payment details.";
+                    }
+                  } else if (errorCode === 'GATEWAY_ERROR') {
+                    errorMessage = "Payment gateway error. Please try again in a few moments.";
+                  } else if (errorCode === 'NETWORK_ERROR') {
+                    errorMessage = "Network error. Please check your internet connection and try again.";
+                  } else if (errorDescription) {
+                    errorMessage = errorDescription;
+                  }
+                }
+                
+                toast({
+                  title: "Payment Failed",
+                  description: errorMessage,
+                  variant: "destructive",
+                });
+              },
+            };
+
+            console.log('[Pricing] Opening Razorpay Checkout with subscription_id:', data.subscriptionId);
+            const razorpayInstance = new Razorpay(options);
+            razorpayInstance.open();
+            return;
+          }
+        }
+
+        // Handle error responses
+        if (data.setupRequired) {
           toast({
-            title: "Invalid Checkout URL",
-            description: `The payment gateway returned an invalid checkout URL: ${shortUrl}. Expected URL starting with 'https://rzp.io/'. Please check Razorpay settings.`,
+            title: "Setup Required",
+            description: "Razorpay payment integration needs to be configured. Please contact support.",
             variant: "destructive",
           });
-          return;
+        } else if (data.databaseError) {
+          toast({
+            title: "Database Error",
+            description: "Please run the database setup script to create the subscriptions table.",
+            variant: "destructive",
+          });
+        } else if (data.razorpayError) {
+          toast({
+            title: "Payment Error",
+            description: data.details || "Failed to create subscription with Razorpay. Please try again.",
+            variant: "destructive",
+          });
+        } else if (data.apiError) {
+          toast({
+            title: "Connection Error",
+            description: "Failed to connect to payment gateway. Please check your internet connection.",
+            variant: "destructive",
+          });
+        } else if (!response.ok) {
+          toast({
+            title: "Payment Error",
+            description: data.error || 'Failed to create subscription with Razorpay. Please try again.',
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(data.error || 'Failed to create subscription');
         }
-        
-        // Redirect to Razorpay payment page
-        console.log('[Pricing] ✅ Valid shortUrl, redirecting to:', shortUrl);
-        window.location.href = shortUrl;
-        return;
-      }
-
-      // Handle missing shortUrl case
-      if (response.ok && data.missingShortUrl) {
-        toast({
-          title: "Hosted Checkout Not Enabled",
-          description: data.details || "Razorpay hosted checkout is not enabled. Please contact Razorpay support to activate it.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.setupRequired) {
-        toast({
-          title: "Setup Required",
-          description: "Razorpay payment integration needs to be configured. Please contact support.",
-          variant: "destructive",
-        });
-      } else if (data.databaseError) {
-        toast({
-          title: "Database Error",
-          description: "Please run the database setup script to create the subscriptions table.",
-          variant: "destructive",
-        });
-      } else if (data.razorpayError) {
-        toast({
-          title: "Payment Error",
-          description: data.details || "Failed to create subscription with Razorpay. Please try again.",
-          variant: "destructive",
-        });
-      } else if (data.apiError) {
-        toast({
-          title: "Connection Error",
-          description: "Failed to connect to payment gateway. Please check your internet connection.",
-          variant: "destructive",
-        });
-      } else if (!response.ok) {
-        toast({
-          title: "Payment Error",
-          description: data.error || 'Failed to create subscription with Razorpay. Please try again.',
-          variant: "destructive",
-        });
-      } else {
-        throw new Error(data.error || 'Failed to create subscription');
-      }
     } catch (error) {
       console.error('Error creating subscription:', error);
       toast({

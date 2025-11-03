@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { useSubscription } from '@/context/SubscriptionProvider';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -33,6 +35,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { subscription, customerCount, invoiceCountThisMonth } = useSubscription();
   const isDemoMode = false; // Demo mode disabled for now
   const [stats, setStats] = useState<DashboardStats>({
     totalCustomers: 0,
@@ -297,19 +300,37 @@ export default function DashboardPage() {
                   <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
                     <BarChart3 className="h-5 w-5 text-blue-600" />
                   </div>
-                  <h3 className="font-bold text-gray-900 text-lg">Current Plan: Free</h3>
+                  <h3 className="font-bold text-gray-900 text-lg">
+                    Current Plan: {subscription?.plan ? SUBSCRIPTION_PLANS[subscription.plan]?.name || subscription.plan : 'Free'}
+                  </h3>
                 </div>
                 <p className="text-gray-600 mb-4">
-                  You're currently on the free plan with basic features.
+                  {subscription?.plan && subscription.plan !== 'free' 
+                    ? `You're currently on the ${SUBSCRIPTION_PLANS[subscription.plan]?.name || subscription.plan} plan with advanced features.`
+                    : "You're currently on the free plan with basic features."}
                 </p>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
                     <span className="text-sm font-medium text-gray-700">Customers:</span>
-                    <span className="font-bold text-blue-600">{stats.totalCustomers}/50</span>
+                    <span className="font-bold text-blue-600">
+                      {customerCount}
+                      {subscription?.plan ? (
+                        SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxCustomers === -1 
+                          ? ' (Unlimited)' 
+                          : `/${SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxCustomers}`
+                      ) : '/50'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
                     <span className="text-sm font-medium text-gray-700">Invoices this month:</span>
-                    <span className="font-bold text-blue-600">0/20</span>
+                    <span className="font-bold text-blue-600">
+                      {invoiceCountThisMonth}
+                      {subscription?.plan ? (
+                        SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxInvoicesPerMonth === -1 
+                          ? ' (Unlimited)' 
+                          : `/${SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxInvoicesPerMonth}`
+                      ) : '/20'}
+                    </span>
                   </div>
                 </div>
               </div>

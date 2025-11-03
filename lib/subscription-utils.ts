@@ -43,22 +43,65 @@ export async function createSubscription(
 
 export async function getSubscription(userId: string): Promise<Subscription | null> {
   try {
+    // Explicitly select all required fields
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select(`
+        plan,
+        status,
+        current_period_start,
+        current_period_end,
+        next_due_date,
+        razorpay_subscription_id,
+        razorpay_customer_id,
+        stripe_subscription_id,
+        stripe_customer_id,
+        cashfree_subscription_id,
+        cashfree_customer_id,
+        cancel_at_period_end,
+        created_at,
+        updated_at
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching subscription:', error);
+      console.error('❌ Error fetching subscription:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return null;
     }
 
     if (!data) {
+      console.log('⚠️ No subscription found in database, checking users table...');
+      
+      // Fallback: Check user's plan in users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('plan')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (userError) {
+        console.error('Error fetching user plan:', userError);
+      }
+
+      const userPlan = userData?.plan || 'free';
+      console.log('📋 User plan from users table:', userPlan);
+
+      // If user has a paid plan but no subscription record, create one
+      if (userPlan !== 'free') {
+        console.log('⚠️ User has paid plan but no subscription record. Plan:', userPlan);
+      }
+
       return {
-        plan: 'free',
+        plan: userPlan as SubscriptionPlan,
         status: 'active',
         currentPeriodStart: new Date().toISOString(),
         currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
@@ -68,7 +111,66 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
       };
     }
 
-    return data as Subscription;
+    // Map database fields to Subscription interface
+    const subscription: Subscription = {
+      plan: data.plan || 'free',
+      status: data.status || 'active',
+      currentPeriodStart: data.current_period_start || new Date().toISOString(),
+      currentPeriodEnd: data.current_period_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      cancelAtPeriodEnd: data.cancel_at_period_end || false,
+      nextDueDate: data.next_due_date || undefined,
+      razorpaySubscriptionId: data.razorpay_subscription_id || undefined,
+      razorpayCustomerId: data.razorpay_customer_id || undefined,
+      stripeSubscriptionId: data.stripe_subscription_id || undefined,
+      stripeCustomerId: data.stripe_customer_id || undefined,
+      cashfreeSubscriptionId: data.cashfree_subscription_id || undefined,
+      cashfreeCustomerId: data.cashfree_customer_id || undefined,
+      createdAt: data.created_at || new Date().toISOString(),
+      updatedAt: data.updated_at || new Date().toISOString(),
+    };
+
+    console.log('📥 Fetched subscription from database:', {
+      userId: userId,
+      hasData: !!data,
+      dbPlan: data?.plan,
+      dbStatus: data?.status,
+      dbRazorpaySubscriptionId: data?.razorpay_subscription_id,
+      dbCurrentPeriodStart: data?.current_period_start,
+      dbCurrentPeriodEnd: data?.current_period_end,
+      dbNextDueDate: data?.next_due_date,
+      mappedPlan: subscription.plan,
+      mappedStatus: subscription.status,
+      mappedRazorpaySubscriptionId: subscription.razorpaySubscriptionId,
+      mappedCurrentPeriodStart: subscription.currentPeriodStart,
+      mappedCurrentPeriodEnd: subscription.currentPeriodEnd,
+      mappedNextDueDate: subscription.nextDueDate,
+      rawData: {
+        plan: data?.plan,
+        status: data?.status,
+        current_period_start: data?.current_period_start,
+        current_period_end: data?.current_period_end,
+        next_due_date: data?.next_due_date,
+        razorpay_subscription_id: data?.razorpay_subscription_id,
+        razorpay_customer_id: data?.razorpay_customer_id,
+      },
+    });
+
+    // If plan is null or free in database, check users table as fallback
+    if (!subscription.plan || subscription.plan === 'free') {
+      console.log('⚠️ Plan is free/null in subscriptions table, checking users table...');
+      const { data: userData } = await supabase
+        .from('users')
+        .select('plan')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (userData?.plan && userData.plan !== 'free') {
+        console.log('✅ Found paid plan in users table:', userData.plan);
+        subscription.plan = userData.plan as SubscriptionPlan;
+      }
+    }
+
+    return subscription;
   } catch (error) {
     console.error('Error fetching subscription:', error);
     return null;

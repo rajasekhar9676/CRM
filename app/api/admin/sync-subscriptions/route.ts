@@ -68,24 +68,51 @@ export async function POST(request: NextRequest) {
         // Fetch latest subscription data from Razorpay
         const razorpaySub = await getRazorpaySubscription(sub.razorpay_subscription_id);
 
+        console.log(`📥 Syncing subscription ${sub.razorpay_subscription_id}:`, {
+          status: razorpaySub.status,
+          charge_at: razorpaySub.charge_at,
+          current_end: razorpaySub.current_end,
+          start_at: razorpaySub.start_at,
+          end_at: razorpaySub.end_at,
+          all_fields: Object.keys(razorpaySub),
+        });
+
         // Calculate next due date
         let nextDueDate: string | null = null;
         
         if (razorpaySub.charge_at) {
           nextDueDate = new Date(razorpaySub.charge_at * 1000).toISOString();
+          console.log(`✅ Using charge_at: ${nextDueDate}`);
         } else if (razorpaySub.current_end) {
           nextDueDate = new Date(razorpaySub.current_end * 1000).toISOString();
+          console.log(`✅ Using current_end: ${nextDueDate}`);
         } else if (razorpaySub.start_at) {
           // Calculate next due date: start_at + 1 billing cycle (monthly)
           const startDate = new Date(razorpaySub.start_at * 1000);
           const nextDue = new Date(startDate);
           nextDue.setMonth(nextDue.getMonth() + 1); // Add 1 month
           nextDueDate = nextDue.toISOString();
+          console.log(`✅ Calculated from start_at: ${nextDueDate}`);
+        } else {
+          console.warn(`⚠️ No date fields available for subscription ${sub.razorpay_subscription_id}`);
+        }
+
+        // Determine plan from Razorpay plan_id
+        const planId = razorpaySub.plan_id;
+        let plan: string = 'free';
+        
+        if (planId === process.env.NEXT_PUBLIC_RAZORPAY_STARTER_PLAN_ID) {
+          plan = 'starter';
+        } else if (planId === process.env.NEXT_PUBLIC_RAZORPAY_PRO_PLAN_ID) {
+          plan = 'pro';
+        } else if (planId === process.env.NEXT_PUBLIC_RAZORPAY_BUSINESS_PLAN_ID) {
+          plan = 'business';
         }
 
         // Update subscription in database
         const updateData: any = {
           status: razorpaySub.status === 'created' ? 'pending' : razorpaySub.status,
+          plan: plan, // Update plan from Razorpay
           updated_at: new Date().toISOString(),
         };
 
@@ -111,6 +138,21 @@ export async function POST(request: NextRequest) {
           errors.push(`Failed to update subscription ${sub.razorpay_subscription_id}: ${updateError.message}`);
         } else {
           synced++;
+          
+          // Also update user's plan in users table
+          const { error: userUpdateError } = await supabaseAdmin
+            .from('users')
+            .update({
+              plan: plan,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', sub.user_id);
+
+          if (userUpdateError) {
+            console.warn(`Warning: Could not update user plan for user ${sub.user_id}:`, userUpdateError);
+          } else {
+            console.log(`✅ Updated user plan to ${plan} for user ${sub.user_id}`);
+          }
         }
       } catch (error: any) {
         failed++;
