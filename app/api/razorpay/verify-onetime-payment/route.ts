@@ -2,16 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { verifyRazorpayPaymentSignature } from '@/lib/razorpay';
-import { SUBSCRIPTION_PLANS, SubscriptionPlan } from '@/lib/subscription';
-import Razorpay from 'razorpay';
+import { verifyRazorpayPaymentSignature, razorpay } from '@/lib/razorpay';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
+import { SubscriptionPlan } from '@/types';
 
 export const dynamic = 'force-dynamic';
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +35,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid payment signature' },
         { status: 400 }
+      );
+    }
+
+    // Check if Razorpay is configured
+    if (!razorpay) {
+      return NextResponse.json(
+        { error: 'Razorpay not configured' },
+        { status: 500 }
       );
     }
 

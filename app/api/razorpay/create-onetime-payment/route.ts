@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { createRazorpayOrder } from '@/lib/razorpay';
-import { SUBSCRIPTION_PLANS, SubscriptionPlan } from '@/lib/subscription';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
+import type { SubscriptionPlan } from '@/types/index';
 
 export const dynamic = 'force-dynamic';
 

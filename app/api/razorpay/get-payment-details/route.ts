@@ -2,14 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-simple';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import Razorpay from 'razorpay';
+import { razorpay } from '@/lib/razorpay';
 
 export const dynamic = 'force-dynamic';
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,60 +45,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if Razorpay is configured
+    if (!razorpay) {
+      return NextResponse.json(
+        { error: 'Razorpay not configured' },
+        { status: 500 }
+      );
+    }
+
     // Fetch subscription details from Razorpay
     const razorpaySubscription = await razorpay.subscriptions.fetch(subscriptionId);
     
-    // Fetch payment history to get the latest payment details
-    const payments = await razorpay.subscriptions.fetchAll(subscriptionId, {
-      count: 1, // Get latest payment
-    });
-
     let paymentDetails = null;
-    
-    // If we have payment history, get the latest payment
-    if (payments && payments.items && payments.items.length > 0) {
-      const latestPaymentId = payments.items[0].id;
-      
-      try {
-        // Fetch payment details
-        const payment = await razorpay.payments.fetch(latestPaymentId);
-        
-        paymentDetails = {
-          method: payment.method || 'N/A',
-          card: payment.method === 'card' ? {
-            last4: payment.card?.last4 || 'N/A',
-            network: payment.card?.network || 'N/A',
-            type: payment.card?.type || 'N/A',
-            issuer: payment.card?.issuer || 'N/A',
-            name: payment.card?.name || 'N/A',
-          } : null,
-          upi: payment.method === 'upi' ? {
-            vpa: payment.vpa || 'N/A',
-            payer_account_type: payment.payer_account_type || 'N/A',
-          } : null,
-          wallet: payment.method === 'wallet' ? {
-            wallet: payment.wallet || 'N/A',
-          } : null,
-          netbanking: payment.method === 'netbanking' ? {
-            bank: payment.bank || 'N/A',
-          } : null,
-          bank: payment.bank || null,
-          vpa: payment.vpa || null,
-          wallet: payment.wallet || null,
-          email: payment.email || null,
-          contact: payment.contact || null,
-          amount: payment.amount || null,
-          currency: payment.currency || 'INR',
-          status: payment.status || 'N/A',
-          created_at: payment.created_at || null,
-        };
-      } catch (paymentError) {
-        console.error('Error fetching payment details:', paymentError);
-      }
-    }
 
-    // Also try to get payment details from subscription's notes or metadata
-    // Razorpay subscriptions store payment info in the latest charge
+    // Get payment details from subscription's invoices
+    // Razorpay subscriptions store payment info in invoices
     try {
       // Get subscription's invoices to find the latest payment
       const invoices = await razorpay.invoices.all({
@@ -129,7 +85,6 @@ export async function POST(request: NextRequest) {
                 } : null,
                 upi: payment.method === 'upi' ? {
                   vpa: payment.vpa || 'N/A',
-                  payer_account_type: payment.payer_account_type || 'N/A',
                 } : null,
                 wallet: payment.method === 'wallet' ? {
                   wallet: payment.wallet || 'N/A',
@@ -137,9 +92,6 @@ export async function POST(request: NextRequest) {
                 netbanking: payment.method === 'netbanking' ? {
                   bank: payment.bank || 'N/A',
                 } : null,
-                bank: payment.bank || null,
-                vpa: payment.vpa || null,
-                wallet: payment.wallet || null,
                 email: payment.email || null,
                 contact: payment.contact || null,
                 amount: payment.amount || null,
