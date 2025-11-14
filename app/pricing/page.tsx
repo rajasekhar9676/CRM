@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Crown, CheckCircle, Loader2 } from 'lucide-react';
 import { useSubscription } from '@/context/SubscriptionProvider';
-import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
+import { SUBSCRIPTION_PLANS, formatPrice } from '@/lib/subscription';
 
 export default function PricingPage() {
   const { data: session, status } = useSession();
@@ -36,6 +36,64 @@ export default function PricingPage() {
   const planPrice = planDetails?.price || 0;
   const isActive = subscription?.status === 'active';
   const hasActivePaidSubscription = currentPlan !== 'free' && isActive;
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const cleanSubscriptionId =
+    subscription?.razorpaySubscriptionId ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+
+  const paymentReference =
+    subscription?.razorpayPaymentId ||
+    (subscription?.razorpaySubscriptionId?.startsWith('onetime_')
+      ? subscription.razorpaySubscriptionId.replace('onetime_', '')
+      : subscription?.razorpaySubscriptionId) ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+
+  const orderReference = subscription?.razorpayOrderId || null;
+
+  const calculateDuration = () => {
+    if (typeof subscription?.billingDurationMonths === 'number' && subscription.billingDurationMonths > 0) {
+      return subscription.billingDurationMonths;
+    }
+
+    if (subscription?.currentPeriodStart && subscription?.currentPeriodEnd) {
+      const start = new Date(subscription.currentPeriodStart);
+      const end = new Date(subscription.currentPeriodEnd);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+        const diffMs = end.getTime() - start.getTime();
+        const approxMonths = Math.max(1, Math.round(diffMs / (30 * 24 * 60 * 60 * 1000)));
+        return approxMonths;
+      }
+    }
+
+    return undefined;
+  };
+
+  const billingDuration = calculateDuration();
+  const amountPaid =
+    typeof subscription?.amountPaid === 'number'
+      ? subscription.amountPaid
+      : billingDuration && currentPlan !== 'free'
+        ? planPrice * billingDuration
+        : undefined;
 
   if (status === 'loading' || subscriptionLoading) {
     return (
@@ -166,19 +224,63 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 bg-white rounded-lg border">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{planName} Plan</h3>
+                <div className="p-4 bg-white rounded-lg border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{planName} Plan</h3>
+                      <p className="text-xs text-gray-500">
+                        ₹{planPrice}/month · One-time billing
+                      </p>
+                    </div>
                     <Badge variant="default" className="bg-emerald-600">
                       Active
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-1">
-                    {planPrice > 0 ? `₹${planPrice}/month` : 'Free'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Next billing: {subscription?.nextDueDate ? new Date(subscription.nextDueDate).toLocaleDateString() : 'N/A'}
-                  </p>
+
+                  <dl className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Current Period</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {subscription?.currentPeriodStart && subscription?.currentPeriodEnd
+                          ? `${formatDateTime(subscription.currentPeriodStart)} — ${formatDateTime(subscription.currentPeriodEnd)}`
+                          : 'N/A'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Next billing reminder</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {subscription?.nextDueDate
+                          ? formatDateTime(subscription.nextDueDate)
+                          : subscription?.currentPeriodEnd
+                          ? `${formatDateTime(subscription.currentPeriodEnd)} • Renew manually`
+                          : 'N/A'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Amount paid</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {typeof amountPaid === 'number' ? formatPrice(amountPaid) : 'N/A'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Duration purchased</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {typeof billingDuration === 'number' ? `${billingDuration} month${billingDuration !== 1 ? 's' : ''}` : 'N/A'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Payment reference</dt>
+                      <dd className="text-sm font-medium text-gray-900 break-all">
+                        {paymentReference || 'N/A'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Order / subscription ID</dt>
+                      <dd className="text-sm font-medium text-gray-900 break-all">
+                        {orderReference || cleanSubscriptionId || 'N/A'}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
@@ -191,12 +293,11 @@ export default function PricingPage() {
                     <Button 
                       variant="outline"
                       onClick={() => {
-                        // Scroll to pricing section if user wants to upgrade
-                        document.getElementById('pricing-plans')?.scrollIntoView({ behavior: 'smooth' });
+                        document.getElementById('extend-plan')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className="w-full sm:w-auto"
                     >
-                      View Upgrade Options
+                      Extend / Upgrade
                     </Button>
                   )}
                 </div>
@@ -205,10 +306,38 @@ export default function PricingPage() {
           </Card>
         ) : null}
         
-        {/* Always show pricing plans below - subscribed users can see upgrade options */}
-        <div id="pricing-plans">
-          <PricingSection showTitle={hasActivePaidSubscription} />
-        </div>
+        {/* Pricing plans / extension */}
+        {hasActivePaidSubscription ? (
+          <Card id="extend-plan" className="border border-emerald-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-center sm:text-left">
+                <Crown className="h-5 w-5 text-emerald-600" />
+                Extend or upgrade your plan
+              </CardTitle>
+              <CardDescription className="text-center sm:text-left">
+                Add more months or switch to a higher plan—payments remain one-time and under your control.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <PricingSection showTitle={false} />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card id="pricing-plans" className="border border-emerald-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-center sm:text-left">
+                <Crown className="h-5 w-5 text-emerald-600" />
+                Pick the plan that fits you
+              </CardTitle>
+              <CardDescription className="text-center sm:text-left">
+                Choose a plan, set the number of months, and finish the one-time payment in seconds.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <PricingSection />
+            </CardContent>
+          </Card>
+        )}
 
         {/* FAQ Section */}
         <Card>

@@ -12,7 +12,8 @@ import {
   Package,
   Menu,
   X,
-  Crown
+  Crown,
+  Globe
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,8 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'Pricing', href: '/pricing', icon: Crown },
+  { name: 'Catalog', href: '/catalog', icon: Globe },
+  { name: 'Billing', href: '/pricing', icon: Crown },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

@@ -120,6 +120,10 @@ async function handleSubscriptionActivated(data: any) {
       status: 'active',
       plan: plan, // Update plan
       updated_at: new Date().toISOString(),
+      billing_duration_months: 1,
+      amount_paid: null,
+      razorpay_payment_id: null,
+      razorpay_order_id: null,
     };
     
     if (nextDueDate) {
@@ -149,6 +153,10 @@ async function handleSubscriptionActivated(data: any) {
           current_period_end: nextDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           next_due_date: nextDueDate,
           updated_at: new Date().toISOString(),
+          billing_duration_months: 1,
+          amount_paid: null,
+          razorpay_payment_id: null,
+          razorpay_order_id: null,
         });
       
       if (error) {
@@ -199,9 +207,15 @@ async function handleSubscriptionCharged(subscriptionData: any, paymentData: any
 
     // Update subscription status to active if payment is successful
     if (paymentData.status === 'captured') {
+    const amountPaid =
+      typeof paymentData.amount === 'number' ? paymentData.amount / 100 : null;
       const updateData: any = {
         status: 'active',
         updated_at: new Date().toISOString(),
+      billing_duration_months: 1,
+      amount_paid: amountPaid,
+      razorpay_payment_id: paymentData.id || null,
+      razorpay_order_id: paymentData.order_id || null,
       };
       
       if (nextDueDate) {

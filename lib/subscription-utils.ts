@@ -54,11 +54,15 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
         next_due_date,
         razorpay_subscription_id,
         razorpay_customer_id,
+        razorpay_order_id,
+        razorpay_payment_id,
         stripe_subscription_id,
         stripe_customer_id,
         cashfree_subscription_id,
         cashfree_customer_id,
         cancel_at_period_end,
+        amount_paid,
+        billing_duration_months,
         created_at,
         updated_at
       `)
@@ -121,10 +125,14 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
       nextDueDate: data.next_due_date || undefined,
       razorpaySubscriptionId: data.razorpay_subscription_id || undefined,
       razorpayCustomerId: data.razorpay_customer_id || undefined,
+      razorpayOrderId: data.razorpay_order_id || undefined,
+      razorpayPaymentId: data.razorpay_payment_id || undefined,
       stripeSubscriptionId: data.stripe_subscription_id || undefined,
       stripeCustomerId: data.stripe_customer_id || undefined,
       cashfreeSubscriptionId: data.cashfree_subscription_id || undefined,
       cashfreeCustomerId: data.cashfree_customer_id || undefined,
+      amountPaid: typeof data.amount_paid === 'number' ? data.amount_paid : undefined,
+      billingDurationMonths: typeof data.billing_duration_months === 'number' ? data.billing_duration_months : undefined,
       createdAt: data.created_at || new Date().toISOString(),
       updatedAt: data.updated_at || new Date().toISOString(),
     };
@@ -144,6 +152,10 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
       mappedCurrentPeriodStart: subscription.currentPeriodStart,
       mappedCurrentPeriodEnd: subscription.currentPeriodEnd,
       mappedNextDueDate: subscription.nextDueDate,
+      amountPaid: subscription.amountPaid,
+      billingDurationMonths: subscription.billingDurationMonths,
+      razorpayOrderId: subscription.razorpayOrderId,
+      razorpayPaymentId: subscription.razorpayPaymentId,
       rawData: {
         plan: data?.plan,
         status: data?.status,
@@ -152,6 +164,10 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
         next_due_date: data?.next_due_date,
         razorpay_subscription_id: data?.razorpay_subscription_id,
         razorpay_customer_id: data?.razorpay_customer_id,
+        razorpay_order_id: data?.razorpay_order_id,
+        razorpay_payment_id: data?.razorpay_payment_id,
+        amount_paid: data?.amount_paid,
+        billing_duration_months: data?.billing_duration_months,
       },
     });
 

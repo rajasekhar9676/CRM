@@ -107,9 +107,13 @@ export async function POST(request: NextRequest) {
             status: normalizedStatus,
             razorpay_subscription_id: razorpaySubscription.id,
             razorpay_customer_id: razorpaySubscription.customer_id,
+            razorpay_payment_id: null,
+            razorpay_order_id: null,
             current_period_start: periodStart,
             current_period_end: periodEnd,
             next_due_date: nextDueDate,
+            amount_paid: null,
+            billing_duration_months: 1,
             updated_at: new Date().toISOString(),
           },
           {

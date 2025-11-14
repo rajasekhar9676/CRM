@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/context/SubscriptionProvider';
 import { formatPrice, SUBSCRIPTION_PLANS } from '@/lib/subscription';
+import type { SubscriptionPlan } from '@/types';
 import { Crown, Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,6 +18,32 @@ export function SubscriptionManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [loadingPaymentDetails, setLoadingPaymentDetails] = useState(false);
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatDateOnly = (value?: string) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
 
   const handleUpgrade = async (planType: 'starter' | 'pro' | 'business' = 'pro') => {
     setIsLoading(true);
@@ -175,7 +202,7 @@ export function SubscriptionManagement() {
                   errorMessage = "Card payment failed. Please check your card details or try a different payment method.";
                 } else if (errorDescription?.includes('insufficient')) {
                   errorMessage = "Insufficient funds. Please check your account balance or use a different payment method.";
-                } else {
+      } else {
                   errorMessage = errorDescription || "Payment request is invalid. Please check your payment details.";
                 }
               } else if (errorCode === 'GATEWAY_ERROR') {
@@ -379,9 +406,49 @@ export function SubscriptionManagement() {
     );
   }
 
-  const plan = subscription?.plan || 'free';
+  const plan = (subscription?.plan || 'free') as SubscriptionPlan;
   const isActive = subscription?.status === 'active';
   const isCanceled = subscription?.cancelAtPeriodEnd;
+  const subscriptionDisplayId =
+    subscription?.razorpaySubscriptionId ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+  const paymentReference =
+    subscription?.razorpayPaymentId ||
+    (subscription?.razorpaySubscriptionId?.startsWith('onetime_')
+      ? subscription.razorpaySubscriptionId.replace('onetime_', '')
+      : subscription?.razorpaySubscriptionId) ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+  const orderReference = subscription?.razorpayOrderId || null;
+
+  const calculateDuration = () => {
+    if (typeof subscription?.billingDurationMonths === 'number' && subscription.billingDurationMonths > 0) {
+      return subscription.billingDurationMonths;
+    }
+
+    if (subscription?.currentPeriodStart && subscription?.currentPeriodEnd) {
+      const start = new Date(subscription.currentPeriodStart);
+      const end = new Date(subscription.currentPeriodEnd);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+        const diffMs = end.getTime() - start.getTime();
+        const approxMonths = Math.max(1, Math.round(diffMs / (30 * 24 * 60 * 60 * 1000)));
+        return approxMonths;
+      }
+    }
+
+    return undefined;
+  };
+
+  const billingDuration = calculateDuration();
+  const totalAmountPaid =
+    typeof subscription?.amountPaid === 'number'
+      ? subscription.amountPaid
+      : billingDuration && plan !== 'free'
+        ? SUBSCRIPTION_PLANS[plan]?.price * billingDuration
+        : undefined;
 
   // Debug logging
   console.log('[SubscriptionManagement] Subscription data:', {
@@ -412,7 +479,7 @@ export function SubscriptionManagement() {
         {/* Current Plan */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div>
+          <div>
               <h3 className="text-lg font-semibold">
                 Current Plan: {plan === 'free' ? 'Free' : plan === 'starter' ? 'Starter' : plan === 'pro' ? 'Pro' : 'Business'}
               </h3>
@@ -441,7 +508,7 @@ export function SubscriptionManagement() {
             </div>
           )}
         </div>
-        
+
         {/* Usage Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 border rounded-lg">
@@ -539,27 +606,41 @@ export function SubscriptionManagement() {
             <h4 className="font-medium mb-3">Billing Information</h4>
             <div className="space-y-3 text-sm bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-medium">Subscription ID</span>
+                <span className="text-gray-600 font-medium">Subscription / Order ID</span>
                 <span className="font-mono text-xs text-gray-900">
-                  {subscription.razorpaySubscriptionId || subscription.stripeSubscriptionId || subscription.cashfreeSubscriptionId || 'N/A'}
+                  {orderReference || subscriptionDisplayId || 'N/A'}
                 </span>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Payment Reference</span>
+                <span className="font-mono text-xs text-gray-900">
+                  {paymentReference || 'N/A'}
+                </span>
+              </div>
+              {subscription.razorpayPaymentId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Razorpay Payment ID</span>
+                  <span className="font-mono text-xs text-gray-900">
+                    {subscription.razorpayPaymentId}
+                  </span>
+                </div>
+              )}
+              {subscription.razorpayOrderId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Razorpay Order ID</span>
+                  <span className="font-mono text-xs text-gray-900">
+                    {subscription.razorpayOrderId}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">Current Period</span>
                 <span className="text-gray-900">
                   {subscription.currentPeriodStart && subscription.currentPeriodEnd ? (
                     <>
-                      {new Date(subscription.currentPeriodStart).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                      })}
-                      {' - '}
-                      {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                      })}
+                      {formatDateTime(subscription.currentPeriodStart)}
+                      <span className="mx-1 text-gray-400">—</span>
+                      {formatDateTime(subscription.currentPeriodEnd)}
                     </>
                   ) : (
                     'N/A'
@@ -569,21 +650,29 @@ export function SubscriptionManagement() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">Next Billing Date</span>
                 <span className="text-gray-900 font-semibold">
-                  {subscription.nextDueDate 
-                    ? new Date(subscription.nextDueDate).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                      })
-                    : subscription.currentPeriodEnd 
-                    ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                      })
+                  {subscription.nextDueDate
+                    ? formatDateTime(subscription.nextDueDate)
+                    : subscription.currentPeriodEnd
+                    ? `${formatDateTime(subscription.currentPeriodEnd)} • Renew manually`
                     : 'N/A'}
                 </span>
               </div>
+              {typeof totalAmountPaid === 'number' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Amount Paid</span>
+                  <span className="text-gray-900 font-semibold">
+                    {formatPrice(totalAmountPaid)}
+                  </span>
+                </div>
+              )}
+              {typeof billingDuration === 'number' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Duration Purchased</span>
+                  <span className="text-gray-900 font-semibold">
+                    {billingDuration} month{billingDuration !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
               {(subscription.razorpaySubscriptionId || subscription.stripeSubscriptionId || subscription.cashfreeSubscriptionId) && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 font-medium">Payment Gateway</span>
@@ -730,22 +819,22 @@ export function SubscriptionManagement() {
           {/* Cancel Subscription Button */}
           {plan !== 'free' && (
             <>
-              <Button
-                variant="outline"
-                onClick={handleCancelSubscription}
-                disabled={isLoading || isCanceled}
-                className="w-full"
-              >
-                {isLoading ? 'Processing...' : isCanceled ? 'Subscription Canceled' : 'Cancel Subscription'}
-              </Button>
-              {isCanceled && (
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Your subscription will end on {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}
-                </p>
+            <Button
+              variant="outline"
+              onClick={handleCancelSubscription}
+              disabled={isLoading || isCanceled}
+              className="w-full"
+            >
+              {isLoading ? 'Processing...' : isCanceled ? 'Subscription Canceled' : 'Cancel Subscription'}
+            </Button>
+            {isCanceled && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Your subscription will end on {new Date(subscription?.currentPeriodEnd || '').toLocaleDateString()}
+              </p>
               )}
             </>
-          )}
-        </div>
+            )}
+          </div>
       </CardContent>
     </Card>
   );

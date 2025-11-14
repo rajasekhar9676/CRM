@@ -5,24 +5,30 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Users, 
-  ShoppingCart, 
-  FileText, 
+import {
+  Users,
+  ShoppingCart,
+  FileText,
   DollarSign,
-  TrendingUp,
   Clock,
   Plus,
   ArrowRight,
   Sparkles,
   Target,
   Zap,
-  BarChart3
+  BarChart3,
+  CalendarDays,
+  CalendarClock,
+  CalendarCheck,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useSubscription } from '@/context/SubscriptionProvider';
-import { SUBSCRIPTION_PLANS } from '@/lib/subscription';
+import { SUBSCRIPTION_PLANS, formatPrice } from '@/lib/subscription';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { jsPDF } from 'jspdf';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -36,6 +42,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { subscription, customerCount, invoiceCountThisMonth } = useSubscription();
+  const { toast } = useToast();
   const isDemoMode = false; // Demo mode disabled for now
   const [stats, setStats] = useState<DashboardStats>({
     totalCustomers: 0,
@@ -139,6 +146,161 @@ export default function DashboardPage() {
   if (!session) {
     return null;
   }
+
+  const currentPlanKey = subscription?.plan || 'free';
+  const planDetails = SUBSCRIPTION_PLANS[currentPlanKey] || SUBSCRIPTION_PLANS.free;
+  const isPaidPlan = currentPlanKey !== 'free';
+  const subscriptionStatus = subscription?.status || 'inactive';
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatDateOnly = (value?: string) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const calculateBillingDuration = () => {
+    if (subscription?.billingDurationMonths && subscription.billingDurationMonths > 0) {
+      return subscription.billingDurationMonths;
+    }
+
+    if (subscription?.currentPeriodStart && subscription?.currentPeriodEnd) {
+      const start = new Date(subscription.currentPeriodStart);
+      const end = new Date(subscription.currentPeriodEnd);
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+        const diffMs = end.getTime() - start.getTime();
+        const approxMonths = Math.max(1, Math.round(diffMs / (30 * 24 * 60 * 60 * 1000)));
+        return approxMonths;
+      }
+    }
+
+    return 1;
+  };
+
+  const billingDuration = calculateBillingDuration();
+
+  const totalAmountPaid = isPaidPlan
+    ? subscription?.amountPaid ?? planDetails.price * billingDuration
+    : 0;
+
+  const paymentReference =
+    subscription?.razorpayPaymentId ||
+    (subscription?.razorpaySubscriptionId?.startsWith('onetime_')
+      ? subscription.razorpaySubscriptionId.replace('onetime_', '')
+      : subscription?.razorpaySubscriptionId) ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+
+  const orderReference = subscription?.razorpayOrderId || null;
+
+  const subscriptionDisplayId =
+    subscription?.razorpaySubscriptionId ||
+    subscription?.stripeSubscriptionId ||
+    subscription?.cashfreeSubscriptionId ||
+    null;
+
+  const nextBillingText = subscription?.nextDueDate
+    ? formatDateTime(subscription.nextDueDate)
+    : subscription?.currentPeriodEnd
+      ? `${formatDateOnly(subscription.currentPeriodEnd)} • renew manually`
+      : '—';
+
+  const invoiceNumber = paymentReference
+    ? `BM-${paymentReference.slice(-6).toUpperCase()}`
+    : `BM-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(
+        new Date().getDate()
+      ).padStart(2, '0')}`;
+
+  const handleDownloadInvoice = () => {
+    if (!subscription || !isPaidPlan) {
+      toast({
+        title: 'No invoice available yet',
+        description: 'Upgrade to a paid plan to generate billing invoices.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const issueDate = formatDateOnly(new Date().toISOString());
+      const periodText = `${formatDateOnly(subscription.currentPeriodStart)} - ${formatDateOnly(
+        subscription.currentPeriodEnd
+      )}`;
+      const displayAmount = `INR ${totalAmountPaid.toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+
+      doc.setFontSize(18);
+      doc.text('BizMitra Subscription Invoice', 105, 20, { align: 'center' });
+
+      doc.setFontSize(11);
+      doc.text(`Invoice #: ${invoiceNumber}`, 14, 35);
+      doc.text(`Invoice Date: ${issueDate}`, 14, 41);
+      doc.line(14, 45, 196, 45);
+
+      doc.setFontSize(12);
+      doc.text('Billed To:', 14, 58);
+      doc.setFontSize(11);
+      doc.text(session?.user?.name || 'Customer', 14, 64);
+      if (session?.user?.email) {
+        doc.text(session.user.email, 14, 70);
+      }
+
+      doc.setFontSize(12);
+      doc.text('Subscription Details', 14, 86);
+      doc.setFontSize(11);
+      doc.text(`Plan: ${planDetails.name}`, 14, 92);
+      doc.text(`Duration: ${billingDuration} month(s)`, 14, 98);
+      doc.text(`Access Period: ${periodText}`, 14, 104);
+      doc.text(`Payment ID: ${paymentReference || 'N/A'}`, 14, 110);
+      if (orderReference) {
+        doc.text(`Order ID: ${orderReference}`, 14, 116);
+      }
+      doc.text(`Amount Paid: ${displayAmount}`, 14, orderReference ? 122 : 116);
+
+      doc.setFontSize(11);
+      doc.text('Issued by: BizMitra Billing Team', 14, 140);
+      doc.text('This is a system generated invoice for your records.', 14, 146);
+      doc.text('Need help? Reach us at support@bizmitra.in', 14, 152);
+
+      const filename = `BizMitra-Invoice-${paymentReference || invoiceNumber}.pdf`;
+      doc.save(filename);
+
+      toast({
+        title: 'Invoice downloaded',
+        description: 'Check your downloads folder for the PDF invoice.',
+      });
+    } catch (error) {
+      console.error('Error generating invoice PDF:', error);
+      toast({
+        title: 'Invoice download failed',
+        description: 'We could not generate the invoice. Please try again shortly.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const statCards = [
     {
@@ -279,93 +441,242 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Current Plan & Upgrade Section */}
+        {/* Billing & Subscription Section */}
         <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-200/60 shadow-lg">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
           <CardHeader className="relative z-10">
             <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
-                <TrendingUp className="h-6 w-6 text-white" />
+                <CreditCard className="h-6 w-6 text-white" />
               </div>
-              Your Plan & Upgrade Options
+              Billing & Subscription
             </CardTitle>
             <CardDescription className="text-gray-600 text-lg">
-              Manage your subscription and unlock more features
+              {isPaidPlan
+                ? 'Keep track of your billing dates, renewal reminders, and plan limits.'
+                : 'Review your current limits and upgrade only when you are ready.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="relative z-10">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="group p-6 bg-white/70 backdrop-blur-sm rounded-xl border border-blue-200/50 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-blue-200/60 bg-white/80 backdrop-blur-sm p-6 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge
+                          variant={isPaidPlan ? 'outline' : 'secondary'}
+                          className={`text-xs font-semibold uppercase tracking-wide ${
+                            isPaidPlan
+                              ? 'border-emerald-500 text-emerald-600 bg-emerald-50'
+                              : 'border-blue-200 text-blue-600 bg-blue-50'
+                          }`}
+                        >
+                          {isPaidPlan
+                            ? subscriptionStatus === 'active'
+                              ? 'Active'
+                              : subscriptionStatus
+                            : 'Free Plan'}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {planDetails.price > 0 ? `${formatPrice(planDetails.price)}/month` : '₹0/month'}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900">{planDetails.name} Plan</h3>
+                      <p className="mt-1 text-sm text-gray-600 max-w-lg">
+                        {isPaidPlan
+                          ? 'One-time payment confirmed. Renew only when you are ready and extend the plan for more months.'
+                          : 'Start exploring with the free plan. Upgrade anytime to unlock more capacity and features.'}
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100">
+                      <BarChart3 className="h-8 w-8 text-blue-600" />
+                    </div>
                   </div>
-                  <h3 className="font-bold text-gray-900 text-lg">
-                    Current Plan: {subscription?.plan ? SUBSCRIPTION_PLANS[subscription.plan]?.name || subscription.plan : 'Free'}
-                  </h3>
+
+                  <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CalendarDays className="h-4 w-4" />
+                        Plan Started
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900">
+                        {formatDateTime(subscription?.currentPeriodStart)}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CalendarCheck className="h-4 w-4" />
+                        Active Until
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900">
+                        {formatDateTime(subscription?.currentPeriodEnd)}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CalendarClock className="h-4 w-4" />
+                        Next Billing Reminder
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900">
+                        {nextBillingText}
+                      </dd>
+                      <p className="mt-1 text-xs text-blue-600">
+                        We only charge again when you choose to extend.
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CreditCard className="h-4 w-4" />
+                        Amount Paid
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900">
+                        {isPaidPlan ? formatPrice(totalAmountPaid) : '₹0.00'}
+                      </dd>
+                      <p className="mt-1 text-xs text-blue-600">
+                        Calculated from your latest verified payment.
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CreditCard className="h-4 w-4" />
+                        Duration Purchased
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900">
+                        {billingDuration} month{billingDuration !== 1 ? 's' : ''}
+                      </dd>
+                      <p className="mt-1 text-xs text-blue-600">
+                        Extend anytime from the billing screen.
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                        <CreditCard className="h-4 w-4" />
+                        Payment Reference
+                      </div>
+                      <dd className="mt-2 text-base font-semibold text-gray-900 truncate">
+                        {paymentReference || '—'}
+                      </dd>
+                      <p className="mt-1 text-xs text-blue-600">
+                        Quote this ID when you need billing support.
+                      </p>
+                    </div>
+                    {orderReference || subscriptionDisplayId ? (
+                      <div className="rounded-xl bg-blue-50/70 border border-blue-200/60 p-4">
+                        <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold uppercase tracking-wide">
+                          <CreditCard className="h-4 w-4" />
+                          {orderReference ? 'Order Reference' : 'Subscription ID'}
+                        </div>
+                        <dd className="mt-2 text-base font-semibold text-gray-900 truncate">
+                          {orderReference || subscriptionDisplayId || '—'}
+                        </dd>
+                        <p className="mt-1 text-xs text-blue-600">
+                          Stored in Supabase for audit history.
+                        </p>
+                      </div>
+                    ) : null}
+                  </dl>
                 </div>
-                <p className="text-gray-600 mb-4">
-                  {subscription?.plan && subscription.plan !== 'free' 
-                    ? `You're currently on the ${SUBSCRIPTION_PLANS[subscription.plan]?.name || subscription.plan} plan with advanced features.`
-                    : "You're currently on the free plan with basic features."}
-                </p>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Customers:</span>
-                    <span className="font-bold text-blue-600">
-                      {customerCount}
-                      {subscription?.plan ? (
-                        SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxCustomers === -1 
-                          ? ' (Unlimited)' 
-                          : `/${SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxCustomers}`
-                      ) : '/50'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50/50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Invoices this month:</span>
-                    <span className="font-bold text-blue-600">
-                      {invoiceCountThisMonth}
-                      {subscription?.plan ? (
-                        SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxInvoicesPerMonth === -1 
-                          ? ' (Unlimited)' 
-                          : `/${SUBSCRIPTION_PLANS[subscription.plan]?.limits.maxInvoicesPerMonth}`
-                      ) : '/20'}
-                    </span>
+
+                <div className="rounded-2xl border border-blue-200/60 bg-white/80 backdrop-blur-sm p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    Usage this cycle
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-blue-50/60 rounded-lg border border-blue-100">
+                      <span className="text-sm font-medium text-gray-700">Customers</span>
+                      <span className="font-bold text-blue-600">
+                        {customerCount}
+                        {planDetails.limits.maxCustomers === -1
+                          ? ' / Unlimited'
+                          : ` / ${planDetails.limits.maxCustomers}`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-blue-50/60 rounded-lg border border-blue-100">
+                      <span className="text-sm font-medium text-gray-700">Invoices this month</span>
+                      <span className="font-bold text-blue-600">
+                        {invoiceCountThisMonth}
+                        {planDetails.limits.maxInvoicesPerMonth === -1
+                          ? ' / Unlimited'
+                          : ` / ${planDetails.limits.maxInvoicesPerMonth}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="group p-6 bg-white/70 backdrop-blur-sm rounded-xl border border-emerald-200/50 hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-lg">Upgrade Benefits</h3>
-                </div>
-                <ul className="text-gray-600 space-y-2 mb-6">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    Unlimited customers & invoices
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    Advanced product management
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    WhatsApp CRM integration
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                    Priority support
-                  </li>
-                </ul>
-                <Button 
-                  onClick={() => router.push('/pricing')}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group"
-                >
-                  <span>View Plans & Upgrade</span>
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
+
+              <div className="space-y-4">
+                {isPaidPlan ? (
+                  <>
+                    <div className="rounded-2xl border border-emerald-200/60 bg-white/80 backdrop-blur-sm p-5 shadow-sm">
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">
+                        Need to extend your plan?
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Add more months whenever you need. You stay in control of renewals.
+                      </p>
+                      <Button
+                        onClick={() => router.push('/pricing')}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        Add More Months
+                      </Button>
+                    </div>
+                    <div className="rounded-2xl border border-emerald-200/60 bg-white/80 backdrop-blur-sm p-5 shadow-sm">
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">
+                        Invoice & payment proof
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Download a stamped PDF invoice that includes your payment ID, duration, and amount paid.
+                      </p>
+                      <Button
+                        onClick={handleDownloadInvoice}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                      >
+                        Download Invoice PDF
+                      </Button>
+                    </div>
+                    <div className="rounded-2xl border border-blue-200/60 bg-white/70 backdrop-blur-sm p-5 shadow-sm">
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">
+                        Billing support
+                      </h4>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li>• Payment failed? Try UPI, cards, netbanking, or wallets.</li>
+                        <li>• UPI AutoPay is not required for one-time payments.</li>
+                        <li>• Plan activates only after payment verification.</li>
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-2xl border border-emerald-200/60 bg-white/80 backdrop-blur-sm p-5 shadow-sm">
+                      <h4 className="text-base font-semibold text-gray-900 mb-2">
+                        Ready to unlock more?
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Upgrade to increase limits and access advanced automation, CRM, and analytics.
+                      </p>
+                      <Button
+                        onClick={() => router.push('/pricing')}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        View Paid Plans
+                      </Button>
+                    </div>
+                    <div className="rounded-2xl border border-blue-200/60 bg-white/70 backdrop-blur-sm p-5 shadow-sm">
+                      <h4 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-emerald-600" />
+                        Why teams upgrade
+                      </h4>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        <li>• Serve more than 50 customers without limit worries.</li>
+                        <li>• Generate up to 100 invoices per month on Starter.</li>
+                        <li>• Access automation, WhatsApp CRM, and priority support on higher plans.</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>

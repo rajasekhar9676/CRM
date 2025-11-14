@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     const expiryDate = new Date(now);
     expiryDate.setMonth(expiryDate.getMonth() + durationMonths);
 
+    const totalAmount = planConfig.price * durationMonths;
+
     // Delete any existing active subscriptions for this user (one active at a time)
     await supabaseAdmin
       .from('subscriptions')
@@ -90,12 +92,16 @@ export async function POST(request: NextRequest) {
         // Store order and payment IDs instead of subscription IDs (one-time payment)
         razorpay_subscription_id: `onetime_${paymentId}`, // Mark as one-time
         razorpay_customer_id: payment.customer_id || null,
+        razorpay_payment_id: paymentId,
+        razorpay_order_id: orderId,
         current_period_start: now.toISOString(),
         current_period_end: expiryDate.toISOString(),
         next_due_date: expiryDate.toISOString(), // Expiry date (not renewal date)
         cancel_at_period_end: true, // Auto-expire after period ends
         created_at: now.toISOString(),
         updated_at: now.toISOString(),
+        amount_paid: totalAmount,
+        billing_duration_months: durationMonths,
       });
 
     if (subscriptionError) {
@@ -133,6 +139,9 @@ export async function POST(request: NextRequest) {
         plan: plan,
         expiryDate: expiryDate.toISOString(),
         durationMonths: durationMonths,
+        amountPaid: totalAmount,
+        orderId,
+        paymentId,
       },
     });
 
